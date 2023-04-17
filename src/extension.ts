@@ -4,15 +4,19 @@ import { ExtensionContext, languages, commands, Disposable, workspace, window } 
 // import fetch from 'node-fetch';
 import axios from 'axios';
 import { OverviewCodelensProvider } from './OverviewCodelensProvider';
-
+import { SidebarProvider } from './SidebarProvider';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: ExtensionContext) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "observe" is now active!');
+
+	const sidebarProvider = new SidebarProvider(context.extensionUri);
+
+
+	context.subscriptions.push(
+		window.registerWebviewViewProvider("observe-sidebar", sidebarProvider)
+	);
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -43,6 +47,22 @@ export async function activate(context: ExtensionContext) {
 
 
 	context.subscriptions.push(disposable);
+
+	context.subscriptions.push(
+		commands.registerCommand("observe.refresh", async () => {
+			// HelloWorldPanel.kill();
+			// HelloWorldPanel.createOrShow(context.extensionUri);
+			await commands.executeCommand("workbench.action.closeSidebar");
+			await commands.executeCommand(
+				"workbench.view.extension.observe-sidebar-view"
+			);
+			// setTimeout(() => {
+			//   vscode.commands.executeCommand(
+			//     "workbench.action.webview.openDeveloperTools"
+			//   );
+			// }, 500);
+		})
+	);
 }
 
 // This method is called when your extension is deactivated

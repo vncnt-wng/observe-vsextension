@@ -37,17 +37,13 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
         const body =
         {
             "filePath": fileName,
-            "prevDays": 3
+            "prevDays": 10
         };
-
-        console.log(body)
 
         const responseTimes: { [key: string]: number } = (await axios.post('http://127.0.0.1:8000/get_file_overview',
             body,
             { headers: { 'Content-Type': 'application/json' } },
         )).data;
-
-        console.log(responseTimes)
 
         if (vscode.workspace.getConfiguration("observe").get("enableCodeLens", true)) {
             this.codeLenses = [];
@@ -62,7 +58,6 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
 
                 const nextLine = document.lineAt(line.lineNumber + 1);
                 const nextLineSplit = nextLine.text.split(" ").filter(word => word !== '');
-                console.log(nextLineSplit);
                 if (range && nextLineSplit[0] === "def") {
                     const funcName = nextLineSplit[1].split("(")[0];
                     this.codeLenses.push(new OverviewCodeLens(
@@ -78,7 +73,6 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
     }
 
     public resolveOverviewCodeLens(codeLens: OverviewCodeLens, token: vscode.CancellationToken) {
-        console.log(codeLens)
         if (vscode.workspace.getConfiguration("observe").get("enableCodeLens", true)) {
             codeLens.command = {
                 title: "Mean response time (ms): " + codeLens.meanResponseTime.toFixed(2),
