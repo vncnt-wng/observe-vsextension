@@ -63,6 +63,15 @@ export async function activate(context: ExtensionContext) {
 			// }, 500);
 		})
 	);
+
+	context.subscriptions.push(
+		commands.registerCommand("observe.switchSidePanelFocus", async (qualName: string, fileName: string) => {
+			sidebarProvider._view?.webview.postMessage({
+				type: "switch-focus",
+				value: qualName + ":" + fileName,
+			});
+		})
+	)
 }
 
 // This method is called when your extension is deactivated

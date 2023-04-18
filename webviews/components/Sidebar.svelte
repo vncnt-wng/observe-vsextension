@@ -2,6 +2,8 @@
     import { onMount } from "svelte";
     import axios from "axios";
     let responseTimes: [];
+    $: qualName = "";
+    $: filePath = "";
 
     const padTwoDigits = (digits: number): string => {
         return digits < 10 ? "0" + digits.toString() : digits.toString();
@@ -25,10 +27,10 @@
         );
     };
 
-    onMount(async () => {
+    const switchPanelFoxus = async (qualName: string, filePath: string) => {
         const body = {
-            qualName: "func1",
-            filePath: "app.py",
+            qualName: qualName,
+            filePath: filePath,
             prevDays: 10,
         };
 
@@ -69,7 +71,7 @@
                 type: "histogram",
             },
         ];
-        let Plot1 = new Plotly.newPlot(histogramDiv, histogramData, layout);
+        let Plot1 = new Plotly.newPlot(histogramDiv, histogramData);
 
         const timeStamps = responseTimes.map((t) =>
             getDateStringFromTimestamp(t.timestamp)
@@ -86,7 +88,22 @@
             },
         ];
 
-        let Plot2 = new Plotly.newPlot(timeseriesDiv, timeseriesData, layout);
+        let Plot2 = new Plotly.newPlot(timeseriesDiv, timeseriesData);
+    };
+
+    onMount(async () => {
+        window.addEventListener("message", async (event) => {
+            const message = event.data;
+            switch (message.type) {
+                case "switch-focus":
+                    console.log("MESSAGE GOT");
+                    let split = message.value.split(":");
+                    console.log(split);
+                    qualName = split[0];
+                    filePath = split[1];
+                    await switchPanelFoxus(split[0], split[1]);
+            }
+        });
     });
 </script>
 
@@ -97,7 +114,7 @@
     ></script>
 </svelete:head>
 
-<h1>hello</h1>
+<h1><b>{qualName}</b>::{filePath}</h1>
 
 <div id="histogram" style="width:100%;height:300px;" />
 

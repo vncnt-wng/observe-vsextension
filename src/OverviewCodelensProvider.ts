@@ -8,7 +8,8 @@ import axios from 'axios';
 
 class OverviewCodeLens extends vscode.CodeLens {
     constructor(
-        public readonly funcName: string,
+        public readonly qualName: string,
+        public readonly fileName: string,
         public readonly meanResponseTime: number,
         range: vscode.Range,
     ) {
@@ -32,7 +33,7 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
     }
 
     public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
-        const fileName = document.fileName.split("/").at(-1);
+        const fileName = document.fileName.split("/").at(-1) ?? "";
 
         const body =
         {
@@ -59,10 +60,11 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
                 const nextLine = document.lineAt(line.lineNumber + 1);
                 const nextLineSplit = nextLine.text.split(" ").filter(word => word !== '');
                 if (range && nextLineSplit[0] === "def") {
-                    const funcName = nextLineSplit[1].split("(")[0];
+                    const qualName = nextLineSplit[1].split("(")[0];
                     this.codeLenses.push(new OverviewCodeLens(
-                        funcName,
-                        responseTimes[funcName],
+                        qualName,
+                        fileName,
+                        responseTimes[qualName],
                         range
                     ));
                 }
@@ -77,8 +79,8 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
             codeLens.command = {
                 title: "Mean response time (ms): " + codeLens.meanResponseTime.toFixed(2),
                 tooltip: "Click to view more details",
-                command: "codelens-sample.codelensAction",
-                arguments: ["Argument 1", false, codeLens.funcName]
+                command: "observe.switchSidePanelFocus",
+                arguments: [codeLens.qualName, codeLens.fileName]
             };
             return codeLens;
         }
