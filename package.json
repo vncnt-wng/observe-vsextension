@@ -68,12 +68,13 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "rollup -c --bundleConfigAsCjs && tsc -p ./",
-    "watch": "concurrently \"rollup -c -w --bundleConfigAsCjs ./\" \"tsc -watch -p ./\"",
+    "watch": "concurrently \"rollup -c -w --bundleConfigAsCjs\" \"tsc -watch -p ./\"",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@bulatdashiev/svelte-slider": "^1.0.3",
     "@rollup/plugin-commonjs": "^24.1.0",
     "@rollup/plugin-node-resolve": "^15.0.2",
     "@rollup/plugin-terser": "^0.4.1",
@@ -83,6 +84,7 @@
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
+    "@types/plotly.js": "^2.12.18",
     "@types/vscode": "^1.76.0",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
@@ -90,12 +92,15 @@
     "concurrently": "^8.0.1",
     "eslint": "^8.36.0",
     "glob": "^8.1.0",
+    "install": "^0.13.0",
     "mocha": "^10.2.0",
+    "plotly.js-dist": "^2.21.0",
     "rollup": "^3.20.2",
     "rollup-plugin-css-only": "^4.3.0",
     "svelte": "^3.58.0",
     "svelte-check": "^3.2.0",
     "svelte-preprocess": "^5.0.3",
+    "svelte-range-slider-pips": "^2.1.1",
     "typescript": "^5.0.4"
   },
   "dependencies": {

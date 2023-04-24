@@ -1,9 +1,44 @@
 <script lang="ts">
+    import Plotly from "plotly.js-dist";
+    import RangeSlider from "svelte-range-slider-pips";
     import { onMount } from "svelte";
     import axios from "axios";
-    let responseTimes: [];
-    $: qualName = "";
-    $: filePath = "";
+
+    let qualName = "";
+    let filePath = "";
+
+    // Map of "{qualName}:{filePath}" to all relevant responseTimeData
+    let allResponseTimes: Map<string, []> = new Map();
+
+    // Response times for selected trace (function)
+    let responseTimes: [] = [];
+    // Updated by assigning a new map - no issues with svelte reactivity
+    let commitDetails: Map<string, string> = new Map();
+
+    let selectedCommitId: string = "all";
+
+    $: console.log("the selectedCommitId is " + selectedCommitId);
+    $: if (responseTimes.length > 0) {
+        console.log(responseTimes);
+        const displayedResponseTimes = filterResponseTimeDisplayToSelection(
+            responseTimes,
+            selectedCommitId
+        );
+        console.log(displayedResponseTimes);
+        updateFigures(displayedResponseTimes);
+    }
+
+    // updates displayedResponseTimes
+    const filterResponseTimeDisplayToSelection = (
+        responseTimes: [],
+        selectedCommitId: string
+    ): [] => {
+        const filteredTimes = responseTimes.filter((r) =>
+            selectedCommitId === "all" ? true : r.commit_id === selectedCommitId
+        );
+
+        return filteredTimes;
+    };
 
     const padTwoDigits = (digits: number): string => {
         return digits < 10 ? "0" + digits.toString() : digits.toString();
@@ -27,29 +62,58 @@
         );
     };
 
+    const updateCommitDetails = (responseTimes: []): void => {
+        const newCommitDetails: Map<string, string> = new Map();
+        newCommitDetails.set("all", "all");
+        for (const responseTime of responseTimes) {
+            if (!newCommitDetails.has(responseTime.commit_id)) {
+                const detailString =
+                    responseTime.branch +
+                    " - " +
+                    responseTime.commit_id +
+                    ": " +
+                    responseTime.commit_message;
+                newCommitDetails.set(responseTime.commit_id, detailString);
+            }
+        }
+        commitDetails = newCommitDetails;
+    };
+
+    // Switch panel to look at new data
     const switchPanelFoxus = async (qualName: string, filePath: string) => {
-        const body = {
-            qualName: qualName,
-            filePath: filePath,
-            prevDays: 10,
-        };
+        if (allResponseTimes.has(qualName + ":" + filePath)) {
+            console.log("Loaded old");
+            responseTimes = allResponseTimes.get(qualName + ":" + filePath)!;
+        } else {
+            console.log("Got new");
+            const body = {
+                qualName: qualName,
+                filePath: filePath,
+                prevDays: 10,
+            };
 
-        const responseData: [] = (
-            await axios.post(
-                "http://127.0.0.1:8000/get_all_for_function",
-                body,
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }
-            )
-        ).data;
+            const responseData: [] = (
+                await axios.post(
+                    "http://127.0.0.1:8000/get_all_for_function",
+                    body,
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    }
+                )
+            ).data;
+            responseTimes = responseData;
+            allResponseTimes.set(qualName + ":" + filePath, responseTimes);
+        }
 
-        console.log(responseData);
-        responseTimes = responseData;
+        // displayedResponseTimes = responseTimes;
+        updateCommitDetails(responseTimes);
+        selectedCommitId = "all";
+    };
 
-        const times = responseTimes.map((t) => t.responseTime);
+    const updateFigures = (displayedResponseTimes) => {
+        const times = displayedResponseTimes.map((t) => t.responseTime);
 
         // const layout = {
         //     // autosize: true,
@@ -73,7 +137,7 @@
         ];
         let Plot1 = new Plotly.newPlot(histogramDiv, histogramData);
 
-        const timeStamps = responseTimes.map((t) =>
+        const timeStamps = displayedResponseTimes.map((t) =>
             getDateStringFromTimestamp(t.timestamp)
         );
 
@@ -107,24 +171,25 @@
     });
 </script>
 
-<svelete:head>
-    <script
-        src="https://cdn.plot.ly/plotly-2.12.1.min.js"
-        charset="utf-8"
-    ></script>
-</svelete:head>
+<h2><b>{qualName}</b>:{filePath}</h2>
 
-<h1><b>{qualName}</b>::{filePath}</h1>
+{#if commitDetails.size > 0}
+    <select bind:value={selectedCommitId}>
+        {#each [...commitDetails.keys()] as commitId}
+            <option value={commitId}>{commitDetails.get(commitId)}</option>
+        {/each}
+    </select>
+{/if}
 
 <div id="histogram" style="width:100%;height:300px;" />
 
 <div id="timeseries" style="width:100%;height:300px;" />
 
 <style>
-    h1 {
+    h2 {
         color: green;
     }
-    #histogram {
+    /* #histogram {
         color: red;
-    }
+    } */
 </style>
