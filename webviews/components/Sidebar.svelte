@@ -9,27 +9,51 @@
 
     // Map of "{qualName}:{filePath}" to all relevant responseTimeData
     let allResponseTimes: Map<string, []> = new Map();
-
     // Response times for selected trace (function)
     let responseTimes: [] = [];
+    let commitResponseTimes: [] = [];
+
     // Updated by assigning a new map - no issues with svelte reactivity
     let commitDetails: Map<string, string> = new Map();
 
     let selectedCommitId: string = "all";
 
-    $: console.log("the selectedCommitId is " + selectedCommitId);
+    let minDate: number;
+    let maxDate: number;
+    let displayedDateRange: [number, number];
+
     $: if (responseTimes.length > 0) {
-        console.log(responseTimes);
-        const displayedResponseTimes = filterResponseTimeDisplayToSelection(
+        commitResponseTimes = filterResponseTimeDisplayToCommit(
             responseTimes,
             selectedCommitId
         );
-        console.log(displayedResponseTimes);
+        updateDateRangeToCommit(commitResponseTimes);
+    }
+
+    $: if (commitResponseTimes.length > 0) {
+        const displayedResponseTimes = filterResponseTimeDisplayToDateSelection(
+            commitResponseTimes,
+            displayedDateRange
+        );
         updateFigures(displayedResponseTimes);
     }
 
-    // updates displayedResponseTimes
-    const filterResponseTimeDisplayToSelection = (
+    const filterResponseTimeDisplayToDateSelection = (
+        responseTimes: [],
+        displayedDateRange: [number, number]
+    ): [] => {
+        const filteredTimes = responseTimes.filter((r) => {
+            const dateVal = new Date(r.timestamp).valueOf();
+            return (
+                dateVal > displayedDateRange[0] &&
+                dateVal < displayedDateRange[1]
+            );
+        });
+
+        return filteredTimes;
+    };
+
+    const filterResponseTimeDisplayToCommit = (
         responseTimes: [],
         selectedCommitId: string
     ): [] => {
@@ -46,7 +70,6 @@
 
     const getDateStringFromTimestamp = (timestamp: string): string => {
         const datetime = new Date(timestamp);
-        console.log(datetime);
         return (
             datetime.getFullYear().toString() +
             "-" +
@@ -60,6 +83,20 @@
             ":" +
             padTwoDigits(datetime.getSeconds())
         );
+    };
+
+    const updateDateRangeToCommit = (responseTimes: []): void => {
+        const [min, max] = responseTimes.reduce(
+            ([min, max], val) => {
+                const dateVal = new Date(val.timestamp).valueOf();
+                return [Math.min(min, dateVal), Math.max(max, dateVal)];
+            },
+            [Number.MAX_VALUE, Number.MIN_VALUE]
+        );
+        minDate = new Date(min).valueOf();
+        maxDate = new Date(max).valueOf();
+
+        displayedDateRange = [minDate, maxDate];
     };
 
     const updateCommitDetails = (responseTimes: []): void => {
@@ -82,10 +119,8 @@
     // Switch panel to look at new data
     const switchPanelFoxus = async (qualName: string, filePath: string) => {
         if (allResponseTimes.has(qualName + ":" + filePath)) {
-            console.log("Loaded old");
             responseTimes = allResponseTimes.get(qualName + ":" + filePath)!;
         } else {
-            console.log("Got new");
             const body = {
                 qualName: qualName,
                 filePath: filePath,
@@ -104,6 +139,7 @@
                 )
             ).data;
             responseTimes = responseData;
+            commitResponseTimes = responseTimes;
             allResponseTimes.set(qualName + ":" + filePath, responseTimes);
         }
 
@@ -140,8 +176,6 @@
         const timeStamps = displayedResponseTimes.map((t) =>
             getDateStringFromTimestamp(t.timestamp)
         );
-
-        console.log(timeStamps);
 
         const timeseriesDiv = document.getElementById("timeseries");
         const timeseriesData = [
@@ -181,6 +215,19 @@
     </select>
 {/if}
 
+{#if responseTimes.length > 0}
+    <p>{new Date(displayedDateRange[0]).toUTCString()}</p>
+    <p>{new Date(displayedDateRange[1]).toUTCString()}</p>
+
+    <RangeSlider
+        range
+        pushy
+        bind:values={displayedDateRange}
+        min={minDate}
+        max={maxDate}
+    />
+{/if}
+
 <div id="histogram" style="width:100%;height:300px;" />
 
 <div id="timeseries" style="width:100%;height:300px;" />
@@ -189,6 +236,7 @@
     h2 {
         color: green;
     }
+
     /* #histogram {
         color: red;
     } */
