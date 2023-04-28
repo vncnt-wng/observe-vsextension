@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
+// import { CharStreams, CommonTokenStream } from 'antlr4ts';
+// import { Python3Lexer } from './antlr/Python3Lexer';
+// import { Python3Parser } from './antlr/Python3Parser';
+// import { CustomPython3Listener } from './antlr/CustomPython3Listener';
 
 /**
  * CodelensProvider
@@ -18,7 +22,6 @@ class OverviewCodeLens extends vscode.CodeLens {
 }
 
 export class OverviewCodelensProvider implements vscode.CodeLensProvider {
-
     private codeLenses: vscode.CodeLens[] = [];
     private regexString: string;
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
@@ -33,6 +36,15 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
     }
 
     public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
+        // const charStream = CharStreams.fromString(document.getText());
+        // const lexer = new Python3Lexer(charStream);
+        // const parser = new Python3Parser(new CommonTokenStream(lexer));
+
+        // const listener = new CustomPython3Listener();
+        // parser.addParseListener(listener);
+        // const tree = parser.compilationUnit();
+        // console.log(tree)
+
         const fileName = document.fileName.split("/").at(-1) ?? "";
 
         const body =
