@@ -76,7 +76,7 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
                     this.codeLenses.push(new OverviewCodeLens(
                         qualName,
                         fileName,
-                        responseTimes[qualName],
+                        responseTimes[qualName] ?? 0,
                         range
                     ));
                 }
