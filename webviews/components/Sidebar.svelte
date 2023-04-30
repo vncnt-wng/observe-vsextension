@@ -19,6 +19,8 @@
 
     let selectedCommitId: string = "all";
 
+    let filterTimesGreaterThan: number = 0;
+
     let minDate: number;
     let maxDate: number;
     let displayedDateRange: [number, number];
@@ -27,6 +29,15 @@
     let descendantsResponseTimes: Map<string, []> = new Map();
 
     let flameGraphTree: FlameDataNode | undefined = undefined;
+
+    let openSections: Map<string, boolean> = new Map(
+        Object.entries({
+            filters: true,
+            figures: true,
+            flame: true,
+            params: true,
+        })
+    );
 
     type FlameDataNode = {
         funcId: string;
@@ -44,9 +55,11 @@
     }
 
     $: if (commitResponseTimes.length > 0) {
-        const displayedResponseTimes = filterResponseTimeDisplayToDateSelection(
+        console.log(filterTimesGreaterThan);
+        const displayedResponseTimes = filterResponseTimeDisplayToSelection(
             commitResponseTimes,
-            displayedDateRange
+            displayedDateRange,
+            filterTimesGreaterThan
         );
         const meanResponseTimeForSelection =
             displayedResponseTimes.reduce(
@@ -63,15 +76,17 @@
         }
     }
 
-    const filterResponseTimeDisplayToDateSelection = (
+    const filterResponseTimeDisplayToSelection = (
         responseTimes: [],
-        displayedDateRange: [number, number]
+        displayedDateRange: [number, number],
+        filterTimesGreaterThan: number
     ): [] => {
         const filteredTimes = responseTimes.filter((r) => {
             const dateVal = new Date(r.timestamp).valueOf();
             return (
                 dateVal > displayedDateRange[0] &&
-                dateVal < displayedDateRange[1]
+                dateVal < displayedDateRange[1] &&
+                r.responseTime > filterTimesGreaterThan
             );
         });
 
@@ -328,6 +343,13 @@
         let Plot2 = new Plotly.newPlot(timeseriesDiv, timeseriesData);
     };
 
+    const sectionOnClick = (id: string) => {
+        const newOpenSections = new Map(openSections);
+        newOpenSections.set(id, !newOpenSections.get(id)!);
+        openSections = newOpenSections;
+        console.log(openSections);
+    };
+
     onMount(async () => {
         window.addEventListener("message", async (event) => {
             const message = event.data;
@@ -339,45 +361,98 @@
                     await switchPanelFoxus(split[0], split[1]);
             }
         });
+        console.log(openSections);
     });
 </script>
 
-<h2><b>{qualName}</b>:{filePath}</h2>
+{#if qualName === ""}
+    <h2>Click on a function codelens to view more info</h2>
+{:else}
+    <h2><b>{qualName}</b>:{filePath}</h2>
 
-{#if commitDetails.size > 0}
-    <select bind:value={selectedCommitId}>
-        {#each [...commitDetails.keys()] as commitId}
-            <option value={commitId}>{commitDetails.get(commitId)}</option>
-        {/each}
-    </select>
-{/if}
+    <h3
+        id="filters"
+        on:click={(e) => sectionOnClick(e.target.id)}
+        on:keyup={() => {}}
+    >
+        Filters
+    </h3>
 
-{#if responseTimes.length > 0}
-    <p>{new Date(displayedDateRange[0]).toUTCString()}</p>
-    <p>{new Date(displayedDateRange[1]).toUTCString()}</p>
+    {#if openSections.get("filters")}
+        <p>Filter by commit</p>
+        {#if commitDetails.size > 0}
+            <select bind:value={selectedCommitId} style="width: 100%;">
+                {#each [...commitDetails.keys()] as commitId}
+                    <option value={commitId}
+                        >{commitDetails.get(commitId)}</option
+                    >
+                {/each}
+            </select>
+        {/if}
 
-    <RangeSlider
-        range
-        pushy
-        bind:values={displayedDateRange}
-        min={minDate}
-        max={maxDate}
-    />
-{/if}
+        <p>Filter Response Time (ms) Greater Than</p>
+        <input bind:value={filterTimesGreaterThan} />
 
-<div id="histogram" style="width:100%;height:300px;" />
+        <p>Filter Datetime Range</p>
+        {#if responseTimes.length > 0}
+            <p>{new Date(displayedDateRange[0]).toUTCString()}</p>
+            <p>{new Date(displayedDateRange[1]).toUTCString()}</p>
 
-<div id="timeseries" style="width:100%;height:300px;" />
+            <RangeSlider
+                range
+                pushy
+                bind:values={displayedDateRange}
+                min={minDate}
+                max={maxDate}
+            />
+        {/if}
+    {/if}
 
-<h2>Function Call Breakdown</h2>
+    <h3
+        id="figures"
+        on:click={(e) => sectionOnClick(e.target.id)}
+        on:keyup={() => {}}
+    >
+        Figures
+    </h3>
 
-{#if flameGraphTree}
-    <FlameNode {...flameGraphTree} />
+    {#if openSections.get("figures")}
+        <div id="histogram" style="width:100%;height:280px;" />
+
+        <div id="timeseries" style="width:100%;height:280px;" />
+    {/if}
+
+    <h3
+        id="flame"
+        on:click={(e) => sectionOnClick(e.target.id)}
+        on:keyup={() => {}}
+    >
+        Function Call Breakdown
+    </h3>
+
+    {#if openSections.get("flame")}
+        {#if flameGraphTree}
+            <FlameNode {...flameGraphTree} />
+        {/if}
+    {/if}
+
+    <h3
+        id="params"
+        on:click={(e) => sectionOnClick(e.target.id)}
+        on:keyup={() => {}}
+    >
+        Parameters
+    </h3>
+
+    {#if openSections.get("params")}{/if}
 {/if}
 
 <style>
     h2 {
         color: green;
+    }
+    h3 {
+        color: lightseagreen;
     }
 
     /* #histogram {
