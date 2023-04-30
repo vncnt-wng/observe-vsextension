@@ -30,6 +30,9 @@
 
     let flameGraphTree: FlameDataNode | undefined = undefined;
 
+    let selectedParameter: string = "";
+    let parametersByName: Map<string, object[]> = new Map();
+
     let openSections: Map<string, boolean> = new Map(
         Object.entries({
             filters: true,
@@ -55,7 +58,6 @@
     }
 
     $: if (commitResponseTimes.length > 0) {
-        console.log(filterTimesGreaterThan);
         const displayedResponseTimes = filterResponseTimeDisplayToSelection(
             commitResponseTimes,
             displayedDateRange,
@@ -74,7 +76,24 @@
                 meanResponseTimeForSelection
             );
         }
+        groupParametersByName(displayedResponseTimes);
     }
+
+    const groupParametersByName = (responseTimes) => {
+        const newParamMap = new Map<string, object[]>();
+
+        for (const responseTime of responseTimes) {
+            for (const arg of responseTime.args) {
+                if (newParamMap.has(arg.key)) {
+                    newParamMap.get(arg.key)!.push(arg.value);
+                } else {
+                    newParamMap.set(arg.key, [arg.value]);
+                }
+            }
+        }
+
+        parametersByName = newParamMap;
+    };
 
     const filterResponseTimeDisplayToSelection = (
         responseTimes: [],
@@ -84,8 +103,8 @@
         const filteredTimes = responseTimes.filter((r) => {
             const dateVal = new Date(r.timestamp).valueOf();
             return (
-                dateVal > displayedDateRange[0] &&
-                dateVal < displayedDateRange[1] &&
+                dateVal >= displayedDateRange[0] &&
+                dateVal <= displayedDateRange[1] &&
                 r.responseTime > filterTimesGreaterThan
             );
         });
@@ -300,6 +319,8 @@
         // displayedResponseTimes = responseTimes;
         updateCommitDetails(responseTimes);
         selectedCommitId = "all";
+        selectedParameter = "";
+        parametersByName = new Map();
     };
 
     const updateFigures = (displayedResponseTimes) => {
@@ -347,7 +368,6 @@
         const newOpenSections = new Map(openSections);
         newOpenSections.set(id, !newOpenSections.get(id)!);
         openSections = newOpenSections;
-        console.log(openSections);
     };
 
     onMount(async () => {
@@ -361,7 +381,6 @@
                     await switchPanelFoxus(split[0], split[1]);
             }
         });
-        console.log(openSections);
     });
 </script>
 
@@ -444,8 +463,23 @@
         Parameters
     </h3>
 
-    {#if openSections.get("params")}{/if}
+    {#if openSections.get("params")}
+        <select bind:value={selectedParameter}>
+            {#each [...parametersByName.keys()] as paramName}
+                <option value={paramName}>{paramName}</option>
+            {/each}
+        </select>
+
+        {#if selectedParameter != ""}
+            {#each parametersByName.get(selectedParameter) as value}
+                <p>{JSON.stringify(value)}</p>
+                <br /><br />
+            {/each}
+        {/if}
+    {/if}
 {/if}
+
+<div id="bottom-pad" style="height:50px;" />
 
 <style>
     h2 {
