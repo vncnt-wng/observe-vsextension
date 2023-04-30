@@ -320,7 +320,6 @@
         updateCommitDetails(responseTimes);
         selectedCommitId = "all";
         selectedParameter = "";
-        parametersByName = new Map();
     };
 
     const updateFigures = (displayedResponseTimes) => {
@@ -464,17 +463,23 @@
     </h3>
 
     {#if openSections.get("params")}
-        <select bind:value={selectedParameter}>
-            {#each [...parametersByName.keys()] as paramName}
-                <option value={paramName}>{paramName}</option>
-            {/each}
-        </select>
+        {#if parametersByName.size > 0}
+            <select bind:value={selectedParameter}>
+                {#each [...parametersByName.keys()] as paramName}
+                    <option value={paramName}>{paramName}</option>
+                {/each}
+            </select>
+        {:else}
+            No parameters for the current selection
+        {/if}
 
         {#if selectedParameter != ""}
-            {#each parametersByName.get(selectedParameter) as value}
-                <p>{JSON.stringify(value)}</p>
-                <br /><br />
-            {/each}
+            {#if parametersByName.has(selectedParameter)}
+                {#each parametersByName.get(selectedParameter) as value}
+                    <p>{JSON.stringify(value)}</p>
+                    <br />
+                {/each}
+            {/if}
         {/if}
     {/if}
 {/if}
