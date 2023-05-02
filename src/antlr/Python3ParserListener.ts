@@ -1,4 +1,4 @@
-// Generated from src/antlr/Python3.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from src/antlr/Python3Parser.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
@@ -17,8 +17,8 @@ import { TfpdefContext } from "./Python3Parser";
 import { VarargslistContext } from "./Python3Parser";
 import { VfpdefContext } from "./Python3Parser";
 import { StmtContext } from "./Python3Parser";
+import { Simple_stmtsContext } from "./Python3Parser";
 import { Simple_stmtContext } from "./Python3Parser";
-import { Small_stmtContext } from "./Python3Parser";
 import { Expr_stmtContext } from "./Python3Parser";
 import { AnnassignContext } from "./Python3Parser";
 import { Testlist_star_exprContext } from "./Python3Parser";
@@ -51,7 +51,45 @@ import { Try_stmtContext } from "./Python3Parser";
 import { With_stmtContext } from "./Python3Parser";
 import { With_itemContext } from "./Python3Parser";
 import { Except_clauseContext } from "./Python3Parser";
-import { SuiteContext } from "./Python3Parser";
+import { BlockContext } from "./Python3Parser";
+import { Match_stmtContext } from "./Python3Parser";
+import { Subject_exprContext } from "./Python3Parser";
+import { Star_named_expressionsContext } from "./Python3Parser";
+import { Star_named_expressionContext } from "./Python3Parser";
+import { Case_blockContext } from "./Python3Parser";
+import { GuardContext } from "./Python3Parser";
+import { PatternsContext } from "./Python3Parser";
+import { PatternContext } from "./Python3Parser";
+import { As_patternContext } from "./Python3Parser";
+import { Or_patternContext } from "./Python3Parser";
+import { Closed_patternContext } from "./Python3Parser";
+import { Literal_patternContext } from "./Python3Parser";
+import { Literal_exprContext } from "./Python3Parser";
+import { Complex_numberContext } from "./Python3Parser";
+import { Signed_numberContext } from "./Python3Parser";
+import { Signed_real_numberContext } from "./Python3Parser";
+import { Real_numberContext } from "./Python3Parser";
+import { Imaginary_numberContext } from "./Python3Parser";
+import { Capture_patternContext } from "./Python3Parser";
+import { Pattern_capture_targetContext } from "./Python3Parser";
+import { Wildcard_patternContext } from "./Python3Parser";
+import { Value_patternContext } from "./Python3Parser";
+import { AttrContext } from "./Python3Parser";
+import { Name_or_attrContext } from "./Python3Parser";
+import { Group_patternContext } from "./Python3Parser";
+import { Sequence_patternContext } from "./Python3Parser";
+import { Open_sequence_patternContext } from "./Python3Parser";
+import { Maybe_sequence_patternContext } from "./Python3Parser";
+import { Maybe_star_patternContext } from "./Python3Parser";
+import { Star_patternContext } from "./Python3Parser";
+import { Mapping_patternContext } from "./Python3Parser";
+import { Items_patternContext } from "./Python3Parser";
+import { Key_value_patternContext } from "./Python3Parser";
+import { Double_star_patternContext } from "./Python3Parser";
+import { Class_patternContext } from "./Python3Parser";
+import { Positional_patternsContext } from "./Python3Parser";
+import { Keyword_patternsContext } from "./Python3Parser";
+import { Keyword_patternContext } from "./Python3Parser";
 import { TestContext } from "./Python3Parser";
 import { Test_nocondContext } from "./Python3Parser";
 import { LambdefContext } from "./Python3Parser";
@@ -72,10 +110,11 @@ import { FactorContext } from "./Python3Parser";
 import { PowerContext } from "./Python3Parser";
 import { Atom_exprContext } from "./Python3Parser";
 import { AtomContext } from "./Python3Parser";
+import { NameContext } from "./Python3Parser";
 import { Testlist_compContext } from "./Python3Parser";
 import { TrailerContext } from "./Python3Parser";
 import { SubscriptlistContext } from "./Python3Parser";
-import { SubscriptContext } from "./Python3Parser";
+import { Subscript_Context } from "./Python3Parser";
 import { SliceopContext } from "./Python3Parser";
 import { ExprlistContext } from "./Python3Parser";
 import { TestlistContext } from "./Python3Parser";
@@ -89,13 +128,14 @@ import { Comp_ifContext } from "./Python3Parser";
 import { Encoding_declContext } from "./Python3Parser";
 import { Yield_exprContext } from "./Python3Parser";
 import { Yield_argContext } from "./Python3Parser";
+import { StringsContext } from "./Python3Parser";
 
 
 /**
  * This interface defines a complete listener for a parse tree produced by
  * `Python3Parser`.
  */
-export interface Python3Listener extends ParseTreeListener {
+export interface Python3ParserListener extends ParseTreeListener {
 	/**
 	 * Enter a parse tree produced by `Python3Parser.single_input`.
 	 * @param ctx the parse tree
@@ -251,6 +291,17 @@ export interface Python3Listener extends ParseTreeListener {
 	exitStmt?: (ctx: StmtContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `Python3Parser.simple_stmts`.
+	 * @param ctx the parse tree
+	 */
+	enterSimple_stmts?: (ctx: Simple_stmtsContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.simple_stmts`.
+	 * @param ctx the parse tree
+	 */
+	exitSimple_stmts?: (ctx: Simple_stmtsContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `Python3Parser.simple_stmt`.
 	 * @param ctx the parse tree
 	 */
@@ -260,17 +311,6 @@ export interface Python3Listener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitSimple_stmt?: (ctx: Simple_stmtContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `Python3Parser.small_stmt`.
-	 * @param ctx the parse tree
-	 */
-	enterSmall_stmt?: (ctx: Small_stmtContext) => void;
-	/**
-	 * Exit a parse tree produced by `Python3Parser.small_stmt`.
-	 * @param ctx the parse tree
-	 */
-	exitSmall_stmt?: (ctx: Small_stmtContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `Python3Parser.expr_stmt`.
@@ -625,15 +665,433 @@ export interface Python3Listener extends ParseTreeListener {
 	exitExcept_clause?: (ctx: Except_clauseContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `Python3Parser.suite`.
+	 * Enter a parse tree produced by `Python3Parser.block`.
 	 * @param ctx the parse tree
 	 */
-	enterSuite?: (ctx: SuiteContext) => void;
+	enterBlock?: (ctx: BlockContext) => void;
 	/**
-	 * Exit a parse tree produced by `Python3Parser.suite`.
+	 * Exit a parse tree produced by `Python3Parser.block`.
 	 * @param ctx the parse tree
 	 */
-	exitSuite?: (ctx: SuiteContext) => void;
+	exitBlock?: (ctx: BlockContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.match_stmt`.
+	 * @param ctx the parse tree
+	 */
+	enterMatch_stmt?: (ctx: Match_stmtContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.match_stmt`.
+	 * @param ctx the parse tree
+	 */
+	exitMatch_stmt?: (ctx: Match_stmtContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.subject_expr`.
+	 * @param ctx the parse tree
+	 */
+	enterSubject_expr?: (ctx: Subject_exprContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.subject_expr`.
+	 * @param ctx the parse tree
+	 */
+	exitSubject_expr?: (ctx: Subject_exprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.star_named_expressions`.
+	 * @param ctx the parse tree
+	 */
+	enterStar_named_expressions?: (ctx: Star_named_expressionsContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.star_named_expressions`.
+	 * @param ctx the parse tree
+	 */
+	exitStar_named_expressions?: (ctx: Star_named_expressionsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.star_named_expression`.
+	 * @param ctx the parse tree
+	 */
+	enterStar_named_expression?: (ctx: Star_named_expressionContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.star_named_expression`.
+	 * @param ctx the parse tree
+	 */
+	exitStar_named_expression?: (ctx: Star_named_expressionContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.case_block`.
+	 * @param ctx the parse tree
+	 */
+	enterCase_block?: (ctx: Case_blockContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.case_block`.
+	 * @param ctx the parse tree
+	 */
+	exitCase_block?: (ctx: Case_blockContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.guard`.
+	 * @param ctx the parse tree
+	 */
+	enterGuard?: (ctx: GuardContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.guard`.
+	 * @param ctx the parse tree
+	 */
+	exitGuard?: (ctx: GuardContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.patterns`.
+	 * @param ctx the parse tree
+	 */
+	enterPatterns?: (ctx: PatternsContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.patterns`.
+	 * @param ctx the parse tree
+	 */
+	exitPatterns?: (ctx: PatternsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterPattern?: (ctx: PatternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitPattern?: (ctx: PatternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.as_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterAs_pattern?: (ctx: As_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.as_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitAs_pattern?: (ctx: As_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.or_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterOr_pattern?: (ctx: Or_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.or_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitOr_pattern?: (ctx: Or_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.closed_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterClosed_pattern?: (ctx: Closed_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.closed_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitClosed_pattern?: (ctx: Closed_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.literal_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterLiteral_pattern?: (ctx: Literal_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.literal_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitLiteral_pattern?: (ctx: Literal_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.literal_expr`.
+	 * @param ctx the parse tree
+	 */
+	enterLiteral_expr?: (ctx: Literal_exprContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.literal_expr`.
+	 * @param ctx the parse tree
+	 */
+	exitLiteral_expr?: (ctx: Literal_exprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.complex_number`.
+	 * @param ctx the parse tree
+	 */
+	enterComplex_number?: (ctx: Complex_numberContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.complex_number`.
+	 * @param ctx the parse tree
+	 */
+	exitComplex_number?: (ctx: Complex_numberContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.signed_number`.
+	 * @param ctx the parse tree
+	 */
+	enterSigned_number?: (ctx: Signed_numberContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.signed_number`.
+	 * @param ctx the parse tree
+	 */
+	exitSigned_number?: (ctx: Signed_numberContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.signed_real_number`.
+	 * @param ctx the parse tree
+	 */
+	enterSigned_real_number?: (ctx: Signed_real_numberContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.signed_real_number`.
+	 * @param ctx the parse tree
+	 */
+	exitSigned_real_number?: (ctx: Signed_real_numberContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.real_number`.
+	 * @param ctx the parse tree
+	 */
+	enterReal_number?: (ctx: Real_numberContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.real_number`.
+	 * @param ctx the parse tree
+	 */
+	exitReal_number?: (ctx: Real_numberContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.imaginary_number`.
+	 * @param ctx the parse tree
+	 */
+	enterImaginary_number?: (ctx: Imaginary_numberContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.imaginary_number`.
+	 * @param ctx the parse tree
+	 */
+	exitImaginary_number?: (ctx: Imaginary_numberContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.capture_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterCapture_pattern?: (ctx: Capture_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.capture_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitCapture_pattern?: (ctx: Capture_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.pattern_capture_target`.
+	 * @param ctx the parse tree
+	 */
+	enterPattern_capture_target?: (ctx: Pattern_capture_targetContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.pattern_capture_target`.
+	 * @param ctx the parse tree
+	 */
+	exitPattern_capture_target?: (ctx: Pattern_capture_targetContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.wildcard_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterWildcard_pattern?: (ctx: Wildcard_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.wildcard_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitWildcard_pattern?: (ctx: Wildcard_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.value_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterValue_pattern?: (ctx: Value_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.value_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitValue_pattern?: (ctx: Value_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.attr`.
+	 * @param ctx the parse tree
+	 */
+	enterAttr?: (ctx: AttrContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.attr`.
+	 * @param ctx the parse tree
+	 */
+	exitAttr?: (ctx: AttrContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.name_or_attr`.
+	 * @param ctx the parse tree
+	 */
+	enterName_or_attr?: (ctx: Name_or_attrContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.name_or_attr`.
+	 * @param ctx the parse tree
+	 */
+	exitName_or_attr?: (ctx: Name_or_attrContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.group_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterGroup_pattern?: (ctx: Group_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.group_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitGroup_pattern?: (ctx: Group_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.sequence_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterSequence_pattern?: (ctx: Sequence_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.sequence_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitSequence_pattern?: (ctx: Sequence_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.open_sequence_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterOpen_sequence_pattern?: (ctx: Open_sequence_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.open_sequence_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitOpen_sequence_pattern?: (ctx: Open_sequence_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.maybe_sequence_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterMaybe_sequence_pattern?: (ctx: Maybe_sequence_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.maybe_sequence_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitMaybe_sequence_pattern?: (ctx: Maybe_sequence_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.maybe_star_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterMaybe_star_pattern?: (ctx: Maybe_star_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.maybe_star_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitMaybe_star_pattern?: (ctx: Maybe_star_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.star_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterStar_pattern?: (ctx: Star_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.star_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitStar_pattern?: (ctx: Star_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.mapping_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterMapping_pattern?: (ctx: Mapping_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.mapping_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitMapping_pattern?: (ctx: Mapping_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.items_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterItems_pattern?: (ctx: Items_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.items_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitItems_pattern?: (ctx: Items_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.key_value_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterKey_value_pattern?: (ctx: Key_value_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.key_value_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitKey_value_pattern?: (ctx: Key_value_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.double_star_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterDouble_star_pattern?: (ctx: Double_star_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.double_star_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitDouble_star_pattern?: (ctx: Double_star_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.class_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterClass_pattern?: (ctx: Class_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.class_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitClass_pattern?: (ctx: Class_patternContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.positional_patterns`.
+	 * @param ctx the parse tree
+	 */
+	enterPositional_patterns?: (ctx: Positional_patternsContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.positional_patterns`.
+	 * @param ctx the parse tree
+	 */
+	exitPositional_patterns?: (ctx: Positional_patternsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.keyword_patterns`.
+	 * @param ctx the parse tree
+	 */
+	enterKeyword_patterns?: (ctx: Keyword_patternsContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.keyword_patterns`.
+	 * @param ctx the parse tree
+	 */
+	exitKeyword_patterns?: (ctx: Keyword_patternsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.keyword_pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterKeyword_pattern?: (ctx: Keyword_patternContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.keyword_pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitKeyword_pattern?: (ctx: Keyword_patternContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `Python3Parser.test`.
@@ -856,6 +1314,17 @@ export interface Python3Listener extends ParseTreeListener {
 	exitAtom?: (ctx: AtomContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `Python3Parser.name`.
+	 * @param ctx the parse tree
+	 */
+	enterName?: (ctx: NameContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.name`.
+	 * @param ctx the parse tree
+	 */
+	exitName?: (ctx: NameContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `Python3Parser.testlist_comp`.
 	 * @param ctx the parse tree
 	 */
@@ -889,15 +1358,15 @@ export interface Python3Listener extends ParseTreeListener {
 	exitSubscriptlist?: (ctx: SubscriptlistContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `Python3Parser.subscript`.
+	 * Enter a parse tree produced by `Python3Parser.subscript_`.
 	 * @param ctx the parse tree
 	 */
-	enterSubscript?: (ctx: SubscriptContext) => void;
+	enterSubscript_?: (ctx: Subscript_Context) => void;
 	/**
-	 * Exit a parse tree produced by `Python3Parser.subscript`.
+	 * Exit a parse tree produced by `Python3Parser.subscript_`.
 	 * @param ctx the parse tree
 	 */
-	exitSubscript?: (ctx: SubscriptContext) => void;
+	exitSubscript_?: (ctx: Subscript_Context) => void;
 
 	/**
 	 * Enter a parse tree produced by `Python3Parser.sliceop`.
@@ -1041,5 +1510,16 @@ export interface Python3Listener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitYield_arg?: (ctx: Yield_argContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `Python3Parser.strings`.
+	 * @param ctx the parse tree
+	 */
+	enterStrings?: (ctx: StringsContext) => void;
+	/**
+	 * Exit a parse tree produced by `Python3Parser.strings`.
+	 * @param ctx the parse tree
+	 */
+	exitStrings?: (ctx: StringsContext) => void;
 }
 
