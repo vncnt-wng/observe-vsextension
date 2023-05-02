@@ -26,7 +26,7 @@
     let displayedDateRange: [number, number];
 
     // Map of "{qualName}:{filePath}" to times for descendants
-    let descendantsResponseTimes: Map<string, []> = new Map();
+    let descendantsResponseTimes: Map<string, []> | undefined = new Map();
 
     let flameGraphTree: FlameDataNode | undefined = undefined;
 
@@ -69,6 +69,9 @@
                 0
             ) / displayedResponseTimes.length;
         updateFigures(displayedResponseTimes);
+
+        console.log(descendantsResponseTimes);
+        console.log(flameGraphTree);
         if (descendantsResponseTimes) {
             generateFlameGraphData(
                 selectedCommitId,
@@ -286,7 +289,18 @@
     };
 
     // Switch panel to look at new data
-    const switchPanelFoxus = async (qualName: string, filePath: string) => {
+    const switchPanelFocus = async (
+        newQualName: string,
+        newFilePath: string
+    ) => {
+        // descendantsResponseTimes = undefined;
+        flameGraphTree = undefined;
+        selectedCommitId = "all";
+        selectedParameter = "";
+        filterTimesGreaterThan = 0;
+        qualName = newQualName;
+        filePath = newFilePath;
+
         if (allResponseTimes.has(qualName + ":" + filePath)) {
             responseTimes = allResponseTimes.get(qualName + ":" + filePath)!;
         } else {
@@ -315,11 +329,8 @@
                 responseTimes.map((r) => r.spanId)
             );
         }
-
         // displayedResponseTimes = responseTimes;
         updateCommitDetails(responseTimes);
-        selectedCommitId = "all";
-        selectedParameter = "";
     };
 
     const updateFigures = (displayedResponseTimes) => {
@@ -345,8 +356,9 @@
                 type: "histogram",
             },
         ];
-        let Plot1 = new Plotly.newPlot(histogramDiv, histogramData);
-
+        if (histogramDiv) {
+            let Plot1 = new Plotly.newPlot(histogramDiv, histogramData);
+        }
         const timeStamps = displayedResponseTimes.map((t) =>
             getDateStringFromTimestamp(t.timestamp)
         );
@@ -359,8 +371,9 @@
                 type: "scatter",
             },
         ];
-
-        let Plot2 = new Plotly.newPlot(timeseriesDiv, timeseriesData);
+        if (timeseriesDiv) {
+            let Plot2 = new Plotly.newPlot(timeseriesDiv, timeseriesData);
+        }
     };
 
     const sectionOnClick = (id: string) => {
@@ -377,13 +390,13 @@
                     let split = message.value.split(":");
                     qualName = split[0];
                     filePath = split[1];
-                    await switchPanelFoxus(split[0], split[1]);
+                    await switchPanelFocus(split[0], split[1]);
             }
         });
     });
 </script>
 
-{#if qualName === ""}
+{#if qualName == ""}
     <h2>Click on a function codelens to view more info</h2>
 {:else}
     <h2><b>{qualName}</b>:{filePath}</h2>
@@ -450,7 +463,10 @@
 
     {#if openSections.get("flame")}
         {#if flameGraphTree}
-            <FlameNode {...flameGraphTree} />
+            <FlameNode
+                {...flameGraphTree}
+                switchFocusFunction={switchPanelFocus}
+            />
         {/if}
     {/if}
 
