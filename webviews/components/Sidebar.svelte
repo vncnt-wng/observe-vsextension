@@ -26,9 +26,13 @@
     let displayedDateRange: [number, number];
 
     // Map of "{qualName}:{filePath}" to times for descendants
-    let descendantsResponseTimes: Map<string, []> | undefined = new Map();
+    let descendantsTimesByPathByExecutionPath: Map<
+        string,
+        Map<string, []>
+    > = new Map();
 
-    let flameGraphTree: FlameDataNode | undefined = undefined;
+    let flameGraphTreesByExecutionPath: Map<string, FlameDataNode> = new Map();
+    let proportionOfCallsByExecutionPath: Map<string, number> = new Map();
 
     let selectedParameter: string = "";
     let parametersByName: Map<string, object[]> = new Map();
@@ -63,20 +67,13 @@
             displayedDateRange,
             filterTimesGreaterThan
         );
-        const meanResponseTimeForSelection =
-            displayedResponseTimes.reduce(
-                (acc, curr) => acc + curr.responseTime,
-                0
-            ) / displayedResponseTimes.length;
         updateFigures(displayedResponseTimes);
 
-        console.log(descendantsResponseTimes);
-        console.log(flameGraphTree);
-        if (descendantsResponseTimes) {
+        if (Object.keys(descendantsTimesByPathByExecutionPath).length > 0) {
             generateFlameGraphData(
                 selectedCommitId,
                 displayedDateRange,
-                meanResponseTimeForSelection
+                displayedResponseTimes
             );
         }
         groupParametersByName(displayedResponseTimes);
@@ -129,68 +126,149 @@
     const generateFlameGraphData = (
         selectedCommitId: string,
         displayedDateRange: [number, number],
-        meanResponseTimeForSelection: number
+        displayedResponseTimes: []
     ) => {
-        // const meanTimeByFuncId = new Map<string, number>();
-        // used to generate the tree
-        const childrenByParent = new Map<string, string[]>();
+        const callsByExecutionPath = new Map<string, number>();
+        let totalCount = 0;
 
-        let newFlameGraphTree: FlameDataNode = {
-            funcId: getFuncId(),
-            meanTime: meanResponseTimeForSelection,
-            percentage: 100,
-            children: [],
-        };
+        const meanTimesByExecutionPath = new Map<string, number>();
+        // Iterate through root traces
+        for (const responseTime of displayedResponseTimes) {
+            const executionPath = responseTime.executionPathString;
 
-        const nodesByFuncId = new Map<string, FlameDataNode>();
-        for (const [path, descendantTimes] of Object.entries(
-            descendantsResponseTimes
-        )) {
-            // All descendants will have a parent. Because of how we get data from mongo
-            const pathList = path.split(",");
-            // parent is the second last entry in the path
-            const parent = pathList[pathList.length - 2];
-            const functionId = pathList[pathList.length - 1];
-
-            const meanTime =
-                descendantTimes
-                    .filter((r) => {
-                        const dateVal = new Date(r.timestamp).valueOf();
-                        return (
-                            dateVal > displayedDateRange[0] &&
-                            dateVal < displayedDateRange[1] &&
-                            (selectedCommitId === "all"
-                                ? true
-                                : r.commit_id === selectedCommitId)
-                        );
-                    })
-                    .reduce((acc, curr) => curr.responseTime + acc, 0) /
-                descendantTimes.length;
-
-            // meanTimeByFuncId.set(functionId, meanTime);
-            if (childrenByParent.has(parent)) {
-                childrenByParent.get(parent)!.push(functionId);
+            // for calculating mean time of the tree
+            if (meanTimesByExecutionPath.has(executionPath)) {
+                meanTimesByExecutionPath.set(
+                    executionPath,
+                    meanTimesByExecutionPath.get(executionPath) +
+                        responseTime.responseTime
+                );
             } else {
-                childrenByParent.set(parent, [functionId]);
+                meanTimesByExecutionPath.set(
+                    executionPath,
+                    responseTime.responseTime
+                );
             }
 
-            const flameNode = {
-                funcId: functionId,
-                meanTime: meanTime,
-                percentage: (meanTime / meanResponseTimeForSelection) * 100,
-                children: [],
-            };
-            nodesByFuncId.set(functionId, flameNode);
+            // for calculating proportion of calls taking each execution path
+            totalCount += 1;
+            if (callsByExecutionPath.has(executionPath)) {
+                callsByExecutionPath.set(
+                    executionPath,
+                    callsByExecutionPath.get(executionPath) + 1
+                );
+            } else {
+                callsByExecutionPath.set(executionPath, 1);
+            }
         }
 
-        newFlameGraphTree = generateFlameGraphTree(
-            getFuncId(),
-            newFlameGraphTree,
-            childrenByParent,
-            nodesByFuncId
-        );
+        const timeProportionsByExecutionPath = new Map();
+        for (const [key, value] of callsByExecutionPath) {
+            timeProportionsByExecutionPath.set(key, value / totalCount);
+        }
+        proportionOfCallsByExecutionPath = timeProportionsByExecutionPath;
 
-        flameGraphTree = newFlameGraphTree;
+        // Filter descendant times to relevant
+        const filteredDescendantTimesByPathByExecutionPath = new Map();
+        for (const [executionPath, timesByPath] of Object.entries(
+            descendantsTimesByPathByExecutionPath
+        )) {
+            let totalTime = 0;
+            const filteredTimesByPath = new Map();
+            for (const [path, times] of Object.entries(timesByPath)) {
+                const filteredTimes = times.filter((r) => {
+                    const dateVal = new Date(r.timestamp).valueOf();
+                    return (
+                        dateVal >= displayedDateRange[0] &&
+                        dateVal <= displayedDateRange[1] &&
+                        r.responseTime > filterTimesGreaterThan &&
+                        (selectedCommitId === "all"
+                            ? true
+                            : r.commit_id === selectedCommitId)
+                    );
+                });
+                if (filteredTimes.length > 0) {
+                    filteredTimesByPath.set(path, filteredTimes);
+                }
+
+                totalTime += filteredTimes.reduce(
+                    (acc, curr) => curr.responseTime + acc,
+                    0
+                );
+            }
+            // If the filtered selection includes the current execution path
+            if (filteredTimesByPath.size > 0) {
+                filteredDescendantTimesByPathByExecutionPath.set(
+                    executionPath,
+                    filteredTimesByPath
+                );
+            }
+        }
+
+        const newFlameGraphTrees = new Map<string, FlameDataNode>();
+
+        for (const [
+            executionPath,
+            timesByPath,
+        ] of filteredDescendantTimesByPathByExecutionPath) {
+            // used to generate the tree
+            const childrenByParent = new Map<string, string[]>();
+            const meanRootTimeForSelectionAndExecutionPath =
+                meanTimesByExecutionPath.get(executionPath)!;
+
+            let newFlameGraphTree: FlameDataNode = {
+                funcId: getFuncId(),
+                meanTime: meanRootTimeForSelectionAndExecutionPath,
+                percentage: 100,
+                children: [],
+            };
+
+            const nodesByFuncId = new Map<string, FlameDataNode>();
+
+            for (const [path, descendantTimes] of timesByPath) {
+                // All descendants will have a parent. Because of how we get data from mongo
+                const pathList = path.split(",");
+                // parent is the second last entry in the path
+                const parent = pathList[pathList.length - 2];
+                const functionId = pathList[pathList.length - 1];
+
+                const meanTime =
+                    descendantTimes.reduce(
+                        (acc, curr) => curr.responseTime + acc,
+                        0
+                    ) / descendantTimes.length;
+
+                // meanTimeByFuncId.set(functionId, meanTime);
+                if (childrenByParent.has(parent)) {
+                    childrenByParent.get(parent)!.push(functionId);
+                } else {
+                    childrenByParent.set(parent, [functionId]);
+                }
+
+                const flameNode = {
+                    funcId: functionId,
+                    meanTime: meanTime,
+                    percentage:
+                        (meanTime / meanRootTimeForSelectionAndExecutionPath) *
+                        100,
+                    children: [],
+                };
+                nodesByFuncId.set(functionId, flameNode);
+            }
+
+            newFlameGraphTrees.set(
+                executionPath,
+                generateFlameGraphTree(
+                    getFuncId(),
+                    newFlameGraphTree,
+                    childrenByParent,
+                    nodesByFuncId
+                )
+            );
+            console.log(newFlameGraphTree);
+        }
+        // set instead of modifying for svelte reactivity
+        flameGraphTreesByExecutionPath = newFlameGraphTrees;
     };
 
     // recursively generate the tree from flat structures
@@ -274,7 +352,7 @@
         commitDetails = newCommitDetails;
     };
 
-    const getResponseTimesForDescendants = async (spanIds: string[]) => {
+    const getResponseTimesForDescendants = async () => {
         const body = {
             rootPath: getFuncId(),
         };
@@ -285,7 +363,7 @@
                 },
             })
         ).data;
-        descendantsResponseTimes = responseData.timesByPath;
+        descendantsTimesByPathByExecutionPath = responseData.timesByPathByTree;
     };
 
     // Switch panel to look at new data
@@ -294,12 +372,14 @@
         newFilePath: string
     ) => {
         // descendantsResponseTimes = undefined;
-        flameGraphTree = undefined;
+        flameGraphTreesByExecutionPath = new Map();
         selectedCommitId = "all";
         selectedParameter = "";
         filterTimesGreaterThan = 0;
         qualName = newQualName;
         filePath = newFilePath;
+
+        await getResponseTimesForDescendants();
 
         if (allResponseTimes.has(qualName + ":" + filePath)) {
             responseTimes = allResponseTimes.get(qualName + ":" + filePath)!;
@@ -324,10 +404,6 @@
             responseTimes = responseData;
             commitResponseTimes = responseTimes;
             allResponseTimes.set(qualName + ":" + filePath, responseTimes);
-
-            await getResponseTimesForDescendants(
-                responseTimes.map((r) => r.spanId)
-            );
         }
         // displayedResponseTimes = responseTimes;
         updateCommitDetails(responseTimes);
@@ -462,11 +538,23 @@
     </h3>
 
     {#if openSections.get("flame")}
-        {#if flameGraphTree}
-            <FlameNode
-                {...flameGraphTree}
-                switchFocusFunction={switchPanelFocus}
-            />
+        {#if flameGraphTreesByExecutionPath.size > 0}
+            <h4>
+                {flameGraphTreesByExecutionPath.size} Unique execution paths found
+            </h4>
+            {#each [...flameGraphTreesByExecutionPath] as [executionPath, flameGraphTree]}
+                <p>
+                    {(
+                        proportionOfCallsByExecutionPath.get(executionPath) *
+                        100
+                    ).toFixed(1)}% of calls :
+                    {executionPath}
+                </p>
+                <FlameNode
+                    {...flameGraphTree}
+                    switchFocusFunction={switchPanelFocus}
+                />
+            {/each}
         {/if}
     {/if}
 
