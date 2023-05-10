@@ -70,11 +70,7 @@
         updateFigures(displayedResponseTimes);
 
         if (Object.keys(descendantsTimesByPathByExecutionPath).length > 0) {
-            generateFlameGraphData(
-                selectedCommitId,
-                displayedDateRange,
-                displayedResponseTimes
-            );
+            generateFlameGraphData(displayedDateRange, displayedResponseTimes);
         }
         groupParametersByName(displayedResponseTimes);
     }
@@ -124,7 +120,6 @@
     };
 
     const generateFlameGraphData = (
-        selectedCommitId: string,
         displayedDateRange: [number, number],
         displayedResponseTimes: []
     ) => {
@@ -191,13 +186,11 @@
             for (const [path, times] of Object.entries(timesByPath)) {
                 const filteredTimes = times.filter((r) => {
                     const dateVal = new Date(r.timestamp).valueOf();
+                    // date filtering caputres commit filtering, leave out commit filter here as it may filter incorrectly for different services
                     return (
                         dateVal >= displayedDateRange[0] &&
                         dateVal <= displayedDateRange[1] &&
-                        r.responseTime > filterTimesGreaterThan &&
-                        (selectedCommitId === "all"
-                            ? true
-                            : r.commit_id === selectedCommitId)
+                        r.responseTime > filterTimesGreaterThan
                     );
                 });
                 if (filteredTimes.length > 0) {

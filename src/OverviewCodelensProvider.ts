@@ -4,7 +4,6 @@ import { CharStreams, CommonTokenStream } from 'antlr4ts';
 import { Python3Lexer } from './antlr/Python3Lexer';
 import { Python3Parser } from './antlr/Python3Parser';
 import { CustomPython3Listener } from './antlr/CustomPython3Listener';
-
 /**
  * CodelensProvider
  */
@@ -36,50 +35,80 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
     }
 
     public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
-        const charStream = CharStreams.fromString(document.getText());
-        const lexer = new Python3Lexer(charStream);
-        const parser = new Python3Parser(new CommonTokenStream(lexer));
+        // const workspaceSymbols = await vscode.commands.executeCommand<Location[]>(
+        //     'vscode.executeWorkspaceSymbolProvider',
+        //     'func'
+        // );
 
-        const listener = new CustomPython3Listener();
-        parser.addParseListener(listener);
-        const tree = parser.single_input();
-        console.log(tree);
-
-
-        const fileName = document.fileName.split("/").at(-1) ?? "";
-
-        const body =
-        {
-            "filePath": fileName,
-            "prevDays": 10
-        };
-
-        const responseTimes: { [key: string]: number } = (await axios.post('http://127.0.0.1:8000/get_file_overview',
-            body,
-            { headers: { 'Content-Type': 'application/json' } },
-        )).data;
-
+        // console.log(workspaceSymbols)
         if (vscode.workspace.getConfiguration("observe").get("enableCodeLens", true)) {
-            this.codeLenses = [];
-            const regex = new RegExp(this.regexString, "g");
-            const text = document.getText();
-            let matches;
-            while ((matches = regex.exec(text)) !== null) {
-                const line = document.lineAt(document.positionAt(matches.index).line);
-                const indexOf = line.text.indexOf(matches[0]);
-                const position = new vscode.Position(line.lineNumber, indexOf);
-                const range = document.getWordRangeAtPosition(position, new RegExp(this.regexString, "g"));
+            const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+                'vscode.executeDocumentSymbolProvider',
+                document.uri,
+            );
 
-                const nextLine = document.lineAt(line.lineNumber + 1);
-                const nextLineSplit = nextLine.text.split(" ").filter(word => word !== '');
-                if (range && nextLineSplit[0] === "def") {
-                    const qualName = nextLineSplit[1].split("(")[0];
-                    this.codeLenses.push(new OverviewCodeLens(
-                        qualName,
-                        fileName,
-                        responseTimes[qualName] ?? 0,
-                        range
-                    ));
+            // Map symbols by their name for convenience
+            const nameToSymbolIndex: Map<string, number> = new Map();
+            for (const [i, symbol] of symbols.entries()) {
+                nameToSymbolIndex.set(String(symbol.name), i);
+            }
+
+            const fileName = document.fileName.split("/").at(-1) ?? "";
+
+            const body =
+            {
+                "filePath": fileName,
+                "prevDays": 10
+            };
+
+            const responseTimes: { [key: string]: number } = (await axios.post('http://127.0.0.1:8000/get_file_overview',
+                body,
+                { headers: { 'Content-Type': 'application/json' } },
+            )).data;
+
+            for (const [qualName, value] of Object.entries(responseTimes)) {
+                const parts = qualName.split(".");
+                const symbolIndex = nameToSymbolIndex.get(parts[0])
+                if (symbolIndex === undefined) {
+                    console.log("Couldn't find symbol '" + qualName + "'")
+                    continue;
+                }
+                const symbol = symbols[symbolIndex!];
+                if (parts.length === 1) {
+                    // sanity check
+                    if (symbol && symbol.kind === vscode.SymbolKind.Function) {
+                        this.codeLenses.push(new OverviewCodeLens(
+                            qualName,
+                            fileName,
+                            responseTimes[qualName] ?? 0,
+                            symbol.location.range
+                        ));
+                    } else {
+                        console.log("Couldn't find function '" + qualName + "'")
+                    }
+                    // If function is in class
+                } else if (parts.length === 2) {
+                    // sanity check 
+                    if (symbol && symbol.kind === vscode.SymbolKind.Class) {
+                        const funcName = parts[1];
+                        let flag = false
+                        for (const child of symbol.children) {
+                            if (child.name === funcName && child.kind === vscode.SymbolKind.Method) {
+                                this.codeLenses.push(new OverviewCodeLens(
+                                    qualName,
+                                    fileName,
+                                    responseTimes[qualName] ?? 0,
+                                    child.location.range
+                                ));
+                            }
+                        }
+
+                        if (!flag) {
+                            console.log("Couldn't find function '" + funcName + "' in class '" + parts[0] + "'")
+                        }
+                    } else {
+                        console.log("Couldn't find class '" + parts[0] + "'")
+                    }
                 }
             }
             return this.codeLenses;
