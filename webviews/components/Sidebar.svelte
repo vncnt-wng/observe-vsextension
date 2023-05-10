@@ -162,10 +162,23 @@
             }
         }
 
+        console.log(displayedResponseTimes);
+        console.log(meanTimesByExecutionPath);
+
         const timeProportionsByExecutionPath = new Map();
-        for (const [key, value] of callsByExecutionPath) {
-            timeProportionsByExecutionPath.set(key, value / totalCount);
+        for (const [executionPath, count] of callsByExecutionPath) {
+            timeProportionsByExecutionPath.set(
+                executionPath,
+                count / totalCount
+            );
+            meanTimesByExecutionPath.set(
+                executionPath,
+                meanTimesByExecutionPath.get(executionPath) / count
+            );
         }
+
+        console.log(meanTimesByExecutionPath);
+
         proportionOfCallsByExecutionPath = timeProportionsByExecutionPath;
 
         // Filter descendant times to relevant
@@ -232,11 +245,13 @@
                 const parent = pathList[pathList.length - 2];
                 const functionId = pathList[pathList.length - 1];
 
+                console.log(descendantTimes);
                 const meanTime =
                     descendantTimes.reduce(
                         (acc, curr) => curr.responseTime + acc,
                         0
                     ) / descendantTimes.length;
+                console.log(meanTime);
 
                 // meanTimeByFuncId.set(functionId, meanTime);
                 if (childrenByParent.has(parent)) {
