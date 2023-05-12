@@ -21,27 +21,43 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
         webviewView.webview.onDidReceiveMessage(async (data) => {
+            console.log(data)
             switch (data.type) {
-                // case "logout": {
-                //     TokenManager.setToken("");
-                //     break;
-                // }
-                // case "authenticate": {
-                //     authenticate(() => {
-                //         webviewView.webview.postMessage({
-                //             type: "token",
-                //             value: TokenManager.getToken(),
-                //         });
-                //     });
-                //     break;
-                // }
-                // case "get-token": {
-                //     webviewView.webview.postMessage({
-                //         type: "token",
-                //         value: TokenManager.getToken(),
-                //     });
-                //     break;
-                // }
+                case 'goToSymbol':
+                    console.log(data)
+                    const [qualName, filePath] = data.value;
+                    const parts = qualName.split('.');
+                    const funcName = parts[parts.length - 1];
+
+                    const inClass = parts.length === 2;
+
+                    const workspaceSymbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+                        'vscode.executeWorkspaceSymbolProvider',
+                        funcName // Function name
+                    );
+
+                    let found = false;
+                    let matchSymbol;
+                    for (const symbol of workspaceSymbols) {
+                        if (symbol.name === funcName && symbol.location.uri.path) {
+                            // sanity check for functions in classes 
+                            if (inClass && symbol.containerName !== parts[0]) {
+                                continue;
+                            }
+                            found = true;
+                            matchSymbol = symbol;
+                            break;
+                        }
+                    }
+
+                    if (matchSymbol) {
+                        await vscode.commands.executeCommand<vscode.TextDocumentShowOptions>("vscode.open", matchSymbol.location.uri);
+                        vscode.window.activeTextEditor!.revealRange(matchSymbol.location.range, vscode.TextEditorRevealType.AtTop);
+                    } else {
+                        vscode.window.showInformationMessage("Could not find function " + + "in file: " + filePath);
+                    }
+
+                    break;
                 case "onInfo": {
                     if (!data.value) {
                         return;
@@ -91,14 +107,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 					and only allow scripts that have a specific nonce.
         -->
         <meta http-equiv="Content-Security-Policy" content="img-src https: data: blob: application/json; style-src 'unsafe-inline' ${webview.cspSource
-            }; script-src 'nonce-${nonce}' https://cdn.plot.ly;">
+            }; script-src 'nonce-${nonce}' https://cdn.plot.ly https://kit.fontawesome.com;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
                 
         <link href="${styleMainUri}" rel="stylesheet">
         <script nonce="${nonce}">
           const tsvscode = acquireVsCodeApi();
-          const apiBaseUrl = ${JSON.stringify(apiBaseUrl)}
         </script>
 			</head>
       <body>

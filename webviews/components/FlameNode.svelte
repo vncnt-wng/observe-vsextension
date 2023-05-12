@@ -5,6 +5,7 @@
     export let children = [];
     export let indent = 0;
     export let switchFocusFunction;
+    export let goToFunction;
 
     let hovered = false;
     let open = true;
@@ -19,7 +20,9 @@
     }
 
     function goToInFile() {
-        return;
+        console.log("called in node");
+        const parts = funcId.split(":");
+        goToFunction(parts[0], parts[1]);
     }
 </script>
 
@@ -43,12 +46,13 @@
             <span
                 on:click={switchFocus}
                 on:keydown={() => {}}
-                style="padding: 2px">a</span
+                style="padding: 2px"
+                ><i class="fa-solid fa-magnifying-glass" /></span
             >
             <span
                 on:click={goToInFile}
                 on:keydown={() => {}}
-                style="padding: 2px">b</span
+                style="padding: 2px"><i class="fa-solid fa-arrow-right" /></span
             >
         </span>
     {/if}
@@ -56,7 +60,12 @@
 
 {#if open}
     {#each children as child}
-        <svelte:self {...child} {switchFocusFunction} indent={indent + 15} />
+        <svelte:self
+            {...child}
+            {switchFocusFunction}
+            {goToFunction}
+            indent={indent + 15}
+        />
     {/each}
 {/if}
 
@@ -76,7 +85,7 @@
         white-space: pre;
     }
     #parent #actions {
-        padding-top: 10px;
+        padding-top: 12px;
         width: 100%;
         justify-content: center;
         align-items: right;

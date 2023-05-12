@@ -1,9 +1,5 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
-import { CharStreams, CommonTokenStream } from 'antlr4ts';
-import { Python3Lexer } from './antlr/Python3Lexer';
-import { Python3Parser } from './antlr/Python3Parser';
-import { CustomPython3Listener } from './antlr/CustomPython3Listener';
 /**
  * CodelensProvider
  */
@@ -35,12 +31,7 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
     }
 
     public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
-        // const workspaceSymbols = await vscode.commands.executeCommand<Location[]>(
-        //     'vscode.executeWorkspaceSymbolProvider',
-        //     'func'
-        // );
-
-        // console.log(workspaceSymbols)
+        this.codeLenses = []
         if (vscode.workspace.getConfiguration("observe").get("enableCodeLens", true)) {
             const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
                 'vscode.executeDocumentSymbolProvider',
