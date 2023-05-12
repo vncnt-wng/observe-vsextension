@@ -506,7 +506,7 @@
 		on:click={(e) => sectionOnClick(e.target.id)}
 		on:keyup={() => {}}
 	>
-		Filters
+		{openSections.get("filters") ? "⌄" : "›"} Filters
 	</h3>
 
 	{#if openSections.get("filters")}
@@ -544,7 +544,7 @@
 		on:click={(e) => sectionOnClick(e.target.id)}
 		on:keyup={() => {}}
 	>
-		Figures
+		{openSections.get("figures") ? "⌄" : "›"} Figures
 	</h3>
 
 	{#if openSections.get("figures")}
@@ -558,7 +558,7 @@
 		on:click={(e) => sectionOnClick(e.target.id)}
 		on:keyup={() => {}}
 	>
-		Function Call Breakdown
+		{openSections.get("flame") ? "⌄" : "›"} Function Call Breakdown
 	</h3>
 
 	{#if openSections.get("flame")}
@@ -588,7 +588,7 @@
 		on:click={(e) => sectionOnClick(e.target.id)}
 		on:keyup={() => {}}
 	>
-		Parameters
+		{openSections.get("params") ? "⌄" : "›"} Parameters
 	</h3>
 
 	{#if openSections.get("params")}
