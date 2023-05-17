@@ -2,11 +2,13 @@ import * as path from 'path';
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 // import fetch from 'node-fetch';
-import { window, commands, languages, ExtensionContext, DocumentSymbol } from 'vscode';
+import { window, commands, languages, ExtensionContext, DocumentSymbol, workspace } from 'vscode';
 import axios from 'axios';
 import { OverviewCodelensProvider } from './OverviewCodelensProvider';
 import { SidebarProvider } from './SidebarProvider';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node';
+import { execSync } from 'child_process';
+
 
 let client: LanguageClient;
 
@@ -68,11 +70,16 @@ export async function activate(context: ExtensionContext) {
 		})
 	);
 
+
+
+
 	context.subscriptions.push(
-		commands.registerCommand("observe.switchSidePanelFocus", async (qualName: string, fileName: string) => {
+		commands.registerCommand("observe.switchSidePanelFocus", async (qualName: string, fullPath: string) => {
+			const gitRoot = workspace.workspaceFolders![0].uri.path + '/';
+			const relativePath = fullPath.replace(gitRoot, '')
 			sidebarProvider._view?.webview.postMessage({
 				type: "switch-focus",
-				value: qualName + ":" + fileName,
+				value: qualName + ":" + relativePath,
 			});
 		})
 	)

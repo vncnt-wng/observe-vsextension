@@ -30,6 +30,10 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
         // });
     }
 
+    private decorate = () => {
+
+    };
+
     public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
         this.codeLenses = []
         if (vscode.workspace.getConfiguration("observe").get("enableCodeLens", true)) {
@@ -44,8 +48,13 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
                 nameToSymbolIndex.set(String(symbol.name), i);
             }
 
-            const fileName = document.fileName.split("/").at(-1) ?? "";
+            console.log(symbols)
 
+            const fileName = document.fileName.replace(vscode.workspace.workspaceFolders![0].uri.path + '/', '')
+            // const fileName = document.fileName.replace()
+            console.log(document.fileName)
+            console.log(vscode.workspace.workspaceFolders![0].uri.path)
+            console.log(fileName)
             const body =
             {
                 "filePath": fileName,
@@ -85,6 +94,7 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
                         let flag = false
                         for (const child of symbol.children) {
                             if (child.name === funcName && child.kind === vscode.SymbolKind.Method) {
+                                flag = true
                                 this.codeLenses.push(new OverviewCodeLens(
                                     qualName,
                                     fileName,
