@@ -68,7 +68,6 @@
 			filterTimesGreaterThan
 		);
 		updateFigures(displayedResponseTimes);
-
 		if (Object.keys(descendantsTimesByPathByExecutionPath).length > 0) {
 			generateFlameGraphData(displayedDateRange, displayedResponseTimes);
 		}
@@ -387,6 +386,9 @@
 		qualName = newQualName;
 		filePath = newFilePath;
 
+		console.log(newQualName);
+		console.log(newFilePath);
+
 		await getResponseTimesForDescendants();
 
 		if (allResponseTimes.has(qualName + ":" + filePath)) {
@@ -429,18 +431,18 @@
 	const updateFigures = (displayedResponseTimes) => {
 		const times = displayedResponseTimes.map((t) => t.responseTime);
 
-		// const layout = {
-		//     // autosize: true,
-		//     margin: {
-		//         l: 30,
-		//         r: 30,
-		//         b: 50,
-		//         t: 50,
-		//         pad: 10,
-		//     },
-		//     // paper_bgcolor: "#606060",
-		//     // plot_bgcolor: "#a0a0a0",
-		// };
+		const layout = {
+			// autosize: true,
+			// margin: {
+			// 	// l: 60,
+			// 	// r: 60,
+			// 	// b: 60,
+			// 	// t: 60,
+			// 	pad: 10,
+			// },
+			// paper_bgcolor: "#606060",
+			// plot_bgcolor: "#a0a0a0",
+		};
 
 		const histogramDiv = document.getElementById("histogram");
 		const histogramData = [
@@ -450,7 +452,52 @@
 			},
 		];
 		if (histogramDiv) {
-			let Plot1 = new Plotly.newPlot(histogramDiv, histogramData);
+			let Plot1 = new Plotly.newPlot(
+				histogramDiv,
+				histogramData,
+				{
+					title: {
+						text: "Histogram of response times",
+						font: {
+							size: 14,
+							color: "#7f7f7f",
+						},
+						xref: "paper",
+						x: 0.05,
+					},
+					xaxis: {
+						title: {
+							text: "Response time (ms)",
+							font: {
+								size: 12,
+								color: "#707070",
+							},
+						},
+					},
+					yaxis: {
+						title: {
+							text: "Number of calls",
+							font: {
+								size: 12,
+								color: "#707070",
+							},
+						},
+					},
+					autoexpand: true,
+					margin: {
+						l: 45,
+						r: 45,
+						b: 45,
+						t: 45,
+						pad: 5,
+					},
+					paper_bgcolor: "#1E2227",
+					plot_bgcolor: "#323842",
+				},
+				{
+					displayModeBar: false,
+				}
+			);
 		}
 		const timeStamps = displayedResponseTimes.map((t) =>
 			getDateStringFromTimestamp(t.timestamp)
@@ -465,7 +512,52 @@
 			},
 		];
 		if (timeseriesDiv) {
-			let Plot2 = new Plotly.newPlot(timeseriesDiv, timeseriesData);
+			let Plot2 = new Plotly.newPlot(
+				timeseriesDiv,
+				timeseriesData,
+				{
+					title: {
+						text: "Timeseries of response times",
+						font: {
+							size: 14,
+							color: "#7f7f7f",
+						},
+						xref: "paper",
+						x: 0.05,
+					},
+					xaxis: {
+						title: {
+							text: "Datetime",
+							font: {
+								size: 12,
+								color: "#707070",
+							},
+						},
+					},
+					yaxis: {
+						title: {
+							text: "Response time (ms)",
+							font: {
+								size: 12,
+								color: "#707070",
+							},
+						},
+					},
+					autoexpand: true,
+					margin: {
+						l: 45,
+						r: 45,
+						b: 45,
+						t: 45,
+						pad: 5,
+					},
+					paper_bgcolor: "#1E2227",
+					plot_bgcolor: "#323842",
+				},
+				{
+					displayModeBar: false,
+				}
+			);
 		}
 	};
 
@@ -473,6 +565,17 @@
 		const newOpenSections = new Map(openSections);
 		newOpenSections.set(id, !newOpenSections.get(id)!);
 		openSections = newOpenSections;
+		setTimeout(() => {
+			if (id === "figures") {
+				const displayedResponseTimes =
+					filterResponseTimeDisplayToSelection(
+						commitResponseTimes,
+						displayedDateRange,
+						filterTimesGreaterThan
+					);
+				updateFigures(displayedResponseTimes);
+			}
+		}, 200);
 	};
 
 	onMount(async () => {
@@ -510,7 +613,7 @@
 	</h3>
 
 	{#if openSections.get("filters")}
-		<p>Filter by commit</p>
+		<h4>Filter by commit</h4>
 		{#if commitDetails.size > 0}
 			<select bind:value={selectedCommitId} style="width: 100%;">
 				{#each [...commitDetails.keys()] as commitId}
@@ -521,21 +624,27 @@
 			</select>
 		{/if}
 
-		<p>Filter Response Time (ms) Greater Than</p>
+		<h4 style="padding-top: 10px;">
+			Filter Response Time (ms) Greater Than
+		</h4>
 		<input bind:value={filterTimesGreaterThan} />
 
-		<p>Filter Datetime Range</p>
+		<h4 style="padding-top: 10px;">Filter Datetime Range</h4>
 		{#if responseTimes.length > 0}
-			<p>{new Date(displayedDateRange[0]).toUTCString()}</p>
-			<p>{new Date(displayedDateRange[1]).toUTCString()}</p>
-
-			<RangeSlider
-				range
-				pushy
-				bind:values={displayedDateRange}
-				min={minDate}
-				max={maxDate}
-			/>
+			<p>
+				{new Date(displayedDateRange[0]).toUTCString()} - {new Date(
+					displayedDateRange[1]
+				).toUTCString()}
+			</p>
+			<div style="--range-range: #8260DD">
+				<RangeSlider
+					range
+					pushy
+					bind:values={displayedDateRange}
+					min={minDate}
+					max={maxDate}
+				/>
+			</div>
 		{/if}
 	{/if}
 
@@ -548,7 +657,10 @@
 	</h3>
 
 	{#if openSections.get("figures")}
-		<div id="histogram" style="width:100%;height:280px;" />
+		<div
+			id="histogram"
+			style="width:100%;height:280px;padding-bottom:15px;"
+		/>
 
 		<div id="timeseries" style="width:100%;height:280px;" />
 	{/if}
@@ -617,13 +729,10 @@
 
 <style>
 	h2 {
-		color: green;
+		color: #277ebb;
 	}
 	h3 {
 		color: lightseagreen;
+		padding-top: 10px;
 	}
-
-	/* #histogram {
-        color: red;
-    } */
 </style>
