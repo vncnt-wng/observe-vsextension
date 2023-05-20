@@ -30,10 +30,6 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
         // });
     }
 
-    private decorate = () => {
-
-    };
-
     public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
         this.codeLenses = []
         if (vscode.workspace.getConfiguration("observe").get("enableCodeLens", true)) {
@@ -45,7 +41,7 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
             // Map symbols by their name for convenience
             const nameToSymbolIndex: Map<string, number> = new Map();
             for (const [i, symbol] of symbols.entries()) {
-                nameToSymbolIndex.set(String(symbol.name), i);
+                nameToSymbolIndex.set(String(symbol.name).split(" ")[0], i);
             }
 
             console.log(symbols)
@@ -67,14 +63,19 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
             )).data;
 
             for (const [qualName, value] of Object.entries(responseTimes)) {
+                let symbolIndex = nameToSymbolIndex.get(qualName)
                 const parts = qualName.split(".");
-                const symbolIndex = nameToSymbolIndex.get(parts[0])
+                let inClass = false;
                 if (symbolIndex === undefined) {
-                    console.log("Couldn't find symbol '" + qualName + "'")
-                    continue;
+                    inClass = true;
+                    symbolIndex = nameToSymbolIndex.get(parts[0]);
+                    if (symbolIndex === undefined) {
+                        console.log("Couldn't find symbol '" + qualName + "'");
+                        continue;
+                    }
                 }
                 const symbol = symbols[symbolIndex!];
-                if (parts.length === 1) {
+                if (!inClass) {
                     // sanity check
                     if (symbol && symbol.kind === vscode.SymbolKind.Function) {
                         this.codeLenses.push(new OverviewCodeLens(
@@ -87,7 +88,7 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
                         console.log("Couldn't find function '" + qualName + "'")
                     }
                     // If function is in class
-                } else if (parts.length === 2) {
+                } else {
                     // sanity check 
                     if (symbol && symbol.kind === vscode.SymbolKind.Class) {
                         const funcName = parts[1];
