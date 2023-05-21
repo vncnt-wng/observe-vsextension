@@ -62,6 +62,8 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
                 { headers: { 'Content-Type': 'application/json' } },
             )).data;
 
+            console.log(responseTimes)
+
             for (const [qualName, value] of Object.entries(responseTimes)) {
                 let symbolIndex = nameToSymbolIndex.get(qualName)
                 const parts = qualName.split(".");

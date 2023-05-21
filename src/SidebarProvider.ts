@@ -40,7 +40,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     let found = false;
                     let matchSymbol;
                     for (const symbol of workspaceSymbols) {
-                        if ((symbol.name === funcName || symbol.name === funcName + '()') && symbol.location.uri.path.endsWith(filePath)) {
+                        const name = symbol.name.split(" ")[0]
+                        if ((name === funcName || name === funcName + '()') && symbol.location.uri.path.endsWith(filePath)) {
                             // sanity check for functions in classes 
                             if (inClass && symbol.containerName !== parts[0] && symbol.kind !== SymbolKind.Method) {
                                 continue;
@@ -55,7 +56,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         await vscode.commands.executeCommand<vscode.TextDocumentShowOptions>("vscode.open", matchSymbol.location.uri);
                         vscode.window.activeTextEditor!.revealRange(matchSymbol.location.range, vscode.TextEditorRevealType.AtTop);
                     } else {
-                        vscode.window.showInformationMessage("Could not find function " + qualName + "in file: " + filePath);
+                        vscode.window.showInformationMessage("Could not find function " + qualName + " in file: " + filePath);
                     }
 
                     break;
