@@ -14,14 +14,18 @@
         open = !open;
     }
 
+    function getParts() {
+        return funcId.split("[")[0].split(":");
+    }
+
     function switchFocus() {
-        const parts = funcId.split(":");
+        const parts = getParts();
         switchFocusFunction(parts[0], parts[1]);
     }
 
     function goToInFile() {
         console.log("called in node");
-        const parts = funcId.split(":");
+        const parts = getParts();
         goToFunction(parts[0], parts[1]);
     }
 </script>

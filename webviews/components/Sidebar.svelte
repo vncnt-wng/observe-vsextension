@@ -4,9 +4,13 @@
 	import { onMount } from "svelte";
 	import axios from "axios";
 	import FlameNode from "./FlameNode.svelte";
+	import ParameterSection from "./ParameterSection.svelte";
+	import { getPlotLyLayout } from "./plotlyUtils";
 
 	let qualName = "";
 	let filePath = "";
+
+	let loading = false;
 
 	// Response times for selected trace (function)
 	let responseTimes: [] = [];
@@ -38,9 +42,9 @@
 	> = new Map();
 
 	let flameGraphTreesByExecutionPath: Map<string, FlameDataNode> = new Map();
-	let proportionOfCallsByExecutionPath: Map<string, number> = new Map();
+	let callsByExecutionPath: Map<string, number> = new Map();
+	let totalFilteredCalls: number;
 
-	let selectedParameter: string = "";
 	let parametersByName: Map<string, object[]> = new Map();
 
 	let openSections: Map<string, boolean> = new Map(
@@ -88,7 +92,9 @@
 		const newParamMap = new Map<string, object[]>();
 
 		for (const responseTime of responseTimes) {
+			const time = responseTime.responseTime;
 			for (const arg of responseTime.args) {
+				arg.value["responseTime"] = time;
 				if (newParamMap.has(arg.key)) {
 					newParamMap.get(arg.key)!.push(arg.value);
 				} else {
@@ -133,10 +139,11 @@
 		displayedResponseTimes: [],
 		flameOption: string
 	) => {
-		const callsByExecutionPath = new Map<string, number>();
+		const newCallsByExecutionPath = new Map<string, number>();
 		let totalCount = 0;
 		const meanTimesByExecutionPath = new Map<string, number>();
 		let allFlameData;
+		// const rootIndexByExecutionPath = new Map<string, number>();
 
 		if (flameOption === "descendants") {
 			// Iterate through root traces
@@ -160,13 +167,13 @@
 
 				// for calculating proportion of calls taking each execution path
 				totalCount += 1;
-				if (callsByExecutionPath.has(executionPath)) {
-					callsByExecutionPath.set(
+				if (newCallsByExecutionPath.has(executionPath)) {
+					newCallsByExecutionPath.set(
 						executionPath,
-						callsByExecutionPath.get(executionPath) + 1
+						newCallsByExecutionPath.get(executionPath) + 1
 					);
 				} else {
-					callsByExecutionPath.set(executionPath, 1);
+					newCallsByExecutionPath.set(executionPath, 1);
 				}
 			}
 		} else {
@@ -174,24 +181,58 @@
 			for (const [executionPath, timesByPath] of Object.entries(
 				wholeTreeTimesByPathByExecutionPath
 			)) {
+				// let shortest = Object.keys(timesByPath)[0].length;
+				// let shortestIndex = 0;
+
+				// for (let i = 0; i < Object.keys(timesByPath).length; i++) {
+				// 	const key = Object.keys(timesByPath)[i];
+				// 	console.log(key);
+				// 	if (key.length < shortest) {
+				// 		shortest = key.length;
+				// 		shortestIndex = i;
+				// 	}
+				// }
+				// rootIndexByExecutionPath.set(executionPath, shortestIndex);
+				// console.log("INDEX");
+				// console.log(shortestIndex);
+
 				const rootTimes = timesByPath[Object.keys(timesByPath)[0]];
-				console.log(rootTimes);
-				callsByExecutionPath.set(executionPath, rootTimes.length);
-				totalCount += rootTimes.length;
-				meanTimesByExecutionPath.set(
-					executionPath,
-					rootTimes.reduce((acc, curr) => curr.responseTime + acc, 0)
-				);
+				const filteredRootTimes = rootTimes.filter((r) => {
+					const dateVal = new Date(r.timestamp).valueOf();
+					// date filtering caputres commit filtering, leave out commit filter here as it may filter incorrectly for different services
+					// Only filter by time for the focused function
+					// console.log("root filter: ----- ");
+					// console.log(r.qualName + ":" + r.file);
+					// console.log(getFuncId());
+					// console.log(r.responseTime);
+					return (
+						dateVal >= displayedDateRange[0] &&
+						dateVal <= displayedDateRange[1] &&
+						(getFuncId() === r.qualName + ":" + r.file
+							? r.responseTime > filterTimesGreaterThan
+							: true)
+					);
+				});
+				if (filteredRootTimes.length > 0) {
+					newCallsByExecutionPath.set(
+						executionPath,
+						filteredRootTimes.length
+					);
+					totalCount += filteredRootTimes.length;
+					meanTimesByExecutionPath.set(
+						executionPath,
+						filteredRootTimes.reduce(
+							(acc, curr) => curr.responseTime + acc,
+							0
+						) / filteredRootTimes.length
+					);
+				}
 			}
 		}
 		console.log(meanTimesByExecutionPath);
 
-		const newProportionOfCallsByExecutionPath = new Map();
-		for (const [executionPath, count] of callsByExecutionPath) {
-			newProportionOfCallsByExecutionPath.set(
-				executionPath,
-				count / totalCount
-			);
+		totalFilteredCalls = totalCount;
+		for (const [executionPath, count] of newCallsByExecutionPath) {
 			if (flameOption === "descendants") {
 				meanTimesByExecutionPath.set(
 					executionPath,
@@ -200,13 +241,17 @@
 			}
 		}
 
-		proportionOfCallsByExecutionPath = newProportionOfCallsByExecutionPath;
+		callsByExecutionPath = newCallsByExecutionPath;
 
 		// Filter descendant times to relevant
 		const filteredDescendantTimesByPathByExecutionPath = new Map();
 		for (const [executionPath, timesByPath] of Object.entries(
 			allFlameData
 		)) {
+			if (!newCallsByExecutionPath.get(executionPath)) {
+				continue;
+			}
+
 			let totalTime = 0;
 			const filteredTimesByPath = new Map();
 			for (const [path, times] of Object.entries(timesByPath)) {
@@ -217,7 +262,7 @@
 					return (
 						dateVal >= displayedDateRange[0] - 500 &&
 						dateVal <= displayedDateRange[1] &&
-						(getFuncId() === r.qualName + r.file
+						(getFuncId() === r.qualName + ":" + r.file
 							? r.responseTime > filterTimesGreaterThan
 							: true)
 					);
@@ -239,8 +284,8 @@
 				);
 			}
 		}
-		console.log("filtered");
-		console.log(filteredDescendantTimesByPathByExecutionPath);
+		// console.log("filtered");
+		// console.log(filteredDescendantTimesByPathByExecutionPath);
 
 		const newFlameGraphTrees = new Map<string, FlameDataNode>();
 
@@ -253,14 +298,27 @@
 			const meanRootTimeForSelectionAndExecutionPath =
 				meanTimesByExecutionPath.get(executionPath)!;
 			// console.log("in tree generation");
-			console.log(timesByPath);
+			// console.log(timesByPath);
 			// console.log(timesByPath.keys());
-			const funcId =
-				flameOption === "descendants"
-					? getFuncId()
-					: timesByPath.keys().next().value;
+			// const funcId =
+			// 	flameOption === "descendants"
+			// 		? getFuncId()
+			// 		: Object.keys(timesByPath.keys())[
+			// 				rootIndexByExecutionPath.get(executionPath)!
+			// 		  ];
 
-			console.log(funcId);
+			let funcId = "";
+
+			if (flameOption === "descendants") {
+				funcId = getFuncId();
+			} else {
+				// console.log(rootIndexByExecutionPath.get(executionPath));
+				funcId = timesByPath.keys().next().value;
+				timesByPath.delete(funcId);
+			}
+
+			// console.log("funcId");
+			// console.log(funcId);
 			let newFlameGraphTree: FlameDataNode = {
 				funcId: funcId,
 				meanTime: meanRootTimeForSelectionAndExecutionPath,
@@ -271,19 +329,22 @@
 			const nodesByFuncId = new Map<string, FlameDataNode>();
 
 			for (const [path, descendantTimes] of timesByPath) {
+				if (funcId === path && flameOption !== "descendants") {
+					continue;
+				}
 				// All descendants will have a parent. Because of how we get data from mongo
 				const pathList = path.split(",");
 				// parent is the second last entry in the path
 				const parent = pathList[pathList.length - 2];
 				const functionId = pathList[pathList.length - 1];
 
-				console.log(descendantTimes);
+				// console.log(descendantTimes);
 				const meanTime =
 					descendantTimes.reduce(
 						(acc, curr) => curr.responseTime + acc,
 						0
 					) / descendantTimes.length;
-				console.log(meanTime);
+				// console.log(meanTime);
 
 				// meanTimeByFuncId.set(functionId, meanTime);
 				if (childrenByParent.has(parent)) {
@@ -312,10 +373,10 @@
 					nodesByFuncId
 				)
 			);
-			console.log(newFlameGraphTree);
+			// console.log(newFlameGraphTree);
 		}
-		console.log(proportionOfCallsByExecutionPath);
-		console.log(newFlameGraphTrees);
+		// console.log(proportionOfCallsByExecutionPath);
+		// console.log(newFlameGraphTrees);
 		// set instead of modifying for svelte reactivity
 		flameGraphTreesByExecutionPath = newFlameGraphTrees;
 	};
@@ -419,6 +480,7 @@
 		const body = {
 			rootPath: getFuncId(),
 		};
+		console.log(getFuncId());
 		const responseData = (
 			await axios.post(
 				"http://127.0.0.1:8000/get_all_execution_paths",
@@ -431,6 +493,7 @@
 			)
 		).data;
 		wholeTreeTimesByPathByExecutionPath = responseData.timesByPathByTree;
+		console.log(wholeTreeTimesByPathByExecutionPath);
 	};
 
 	// Switch panel to look at new data
@@ -438,14 +501,16 @@
 		newQualName: string,
 		newFilePath: string
 	) => {
+		loading = true;
 		descendantsTimesByPathByExecutionPath = new Map();
 		flameOption = "descendants";
 		flameGraphTreesByExecutionPath = new Map();
 		selectedCommitId = "all";
-		selectedParameter = "";
 		filterTimesGreaterThan = 0;
 		qualName = newQualName;
 		filePath = newFilePath;
+
+		parametersByName = new Map();
 
 		console.log(newQualName);
 		console.log(newFilePath);
@@ -476,6 +541,7 @@
 
 		// displayedResponseTimes = responseTimes;
 		updateCommitDetails(responseTimes);
+		loading = false;
 	};
 
 	const goToSymbol = async (qualName: string, filePath: string) => {
@@ -489,20 +555,6 @@
 
 	const updateFigures = (displayedResponseTimes) => {
 		const times = displayedResponseTimes.map((t) => t.responseTime);
-
-		const layout = {
-			// autosize: true,
-			// margin: {
-			// 	// l: 60,
-			// 	// r: 60,
-			// 	// b: 60,
-			// 	// t: 60,
-			// 	pad: 10,
-			// },
-			// paper_bgcolor: "#606060",
-			// plot_bgcolor: "#a0a0a0",
-		};
-
 		const histogramDiv = document.getElementById("histogram");
 		const histogramData = [
 			{
@@ -514,45 +566,11 @@
 			let Plot1 = new Plotly.newPlot(
 				histogramDiv,
 				histogramData,
-				{
-					title: {
-						text: "Histogram of response times",
-						font: {
-							size: 14,
-							color: "#7f7f7f",
-						},
-						xref: "paper",
-						x: 0.05,
-					},
-					xaxis: {
-						title: {
-							text: "Response time (ms)",
-							font: {
-								size: 12,
-								color: "#707070",
-							},
-						},
-					},
-					yaxis: {
-						title: {
-							text: "Number of calls",
-							font: {
-								size: 12,
-								color: "#707070",
-							},
-						},
-					},
-					autoexpand: true,
-					margin: {
-						l: 45,
-						r: 45,
-						b: 45,
-						t: 45,
-						pad: 5,
-					},
-					paper_bgcolor: "#1E2227",
-					plot_bgcolor: "#323842",
-				},
+				getPlotLyLayout(
+					"Histogram of response times",
+					"Response time (ms)",
+					"Number of calls"
+				),
 				{
 					displayModeBar: false,
 				}
@@ -574,45 +592,11 @@
 			let Plot2 = new Plotly.newPlot(
 				timeseriesDiv,
 				timeseriesData,
-				{
-					title: {
-						text: "Timeseries of response times",
-						font: {
-							size: 14,
-							color: "#7f7f7f",
-						},
-						xref: "paper",
-						x: 0.05,
-					},
-					xaxis: {
-						title: {
-							text: "Datetime",
-							font: {
-								size: 12,
-								color: "#707070",
-							},
-						},
-					},
-					yaxis: {
-						title: {
-							text: "Response time (ms)",
-							font: {
-								size: 12,
-								color: "#707070",
-							},
-						},
-					},
-					autoexpand: true,
-					margin: {
-						l: 45,
-						r: 45,
-						b: 45,
-						t: 45,
-						pad: 5,
-					},
-					paper_bgcolor: "#1E2227",
-					plot_bgcolor: "#323842",
-				},
+				getPlotLyLayout(
+					"Timeseries of response times",
+					"Datetime",
+					"Response time (ms)"
+				),
 				{
 					displayModeBar: false,
 				}
@@ -660,6 +644,8 @@
 
 {#if qualName == ""}
 	<h2>Click on a function codelens to view more info</h2>
+{:else if loading}
+	<h2>Loading...</h2>
 {:else}
 	<h2><b>{qualName}</b>:{filePath}</h2>
 
@@ -729,7 +715,7 @@
 		on:click={(e) => sectionOnClick(e.target.id)}
 		on:keyup={() => {}}
 	>
-		{openSections.get("flame") ? "⌄" : "›"} Function Call Breakdown
+		{openSections.get("flame") ? "⌄" : "›"} Trace Breakdown
 	</h3>
 
 	{#if openSections.get("flame")}
@@ -743,20 +729,35 @@
 			<h4>
 				{flameGraphTreesByExecutionPath.size} Unique execution paths found
 			</h4>
+			{#each [...new Map([...callsByExecutionPath.entries()].sort((a, b) => b[1] - a[1]))] as [executionPath, calls]}
+				<p>
+					{calls}/{totalFilteredCalls} -
+					{((calls / totalFilteredCalls) * 100).toFixed(1)}% of
+					displayed calls :
+				</p>
+				<FlameNode
+					{...flameGraphTreesByExecutionPath.get(executionPath)}
+					switchFocusFunction={switchPanelFocus}
+					goToFunction={goToSymbol}
+				/>
+			{/each}
+<!-- 
 			{#each [...flameGraphTreesByExecutionPath] as [executionPath, flameGraphTree]}
 				<p>
+					{callsByExecutionPath.get(executionPath) ??
+						totalFilteredCalls}/{totalFilteredCalls} -
 					{(
-						(proportionOfCallsByExecutionPath.get(executionPath) ??
-							1) * 100
-					).toFixed(1)}% of calls :
-					{executionPath}
+						((callsByExecutionPath.get(executionPath) ?? 1) /
+							totalFilteredCalls) *
+						100
+					).toFixed(1)}% of displayed calls :
 				</p>
 				<FlameNode
 					{...flameGraphTree}
 					switchFocusFunction={switchPanelFocus}
 					goToFunction={goToSymbol}
 				/>
-			{/each}
+			{/each} -->
 		{/if}
 	{/if}
 
@@ -769,24 +770,7 @@
 	</h3>
 
 	{#if openSections.get("params")}
-		{#if parametersByName.size > 0}
-			<select bind:value={selectedParameter}>
-				{#each [...parametersByName.keys()] as paramName}
-					<option value={paramName}>{paramName}</option>
-				{/each}
-			</select>
-		{:else}
-			No parameters for the current selection
-		{/if}
-
-		{#if selectedParameter != ""}
-			{#if parametersByName.has(selectedParameter)}
-				{#each parametersByName.get(selectedParameter) as value}
-					<p>{JSON.stringify(value)}</p>
-					<br />
-				{/each}
-			{/if}
-		{/if}
+		<ParameterSection {parametersByName} selectedParameter={""} />
 	{/if}
 {/if}
 
@@ -794,7 +778,7 @@
 
 <style>
 	h2 {
-		color: #277ebb;
+		color: #3181bf;
 	}
 	h3 {
 		color: lightseagreen;
