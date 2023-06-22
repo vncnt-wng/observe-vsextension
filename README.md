@@ -1,5 +1,8 @@
 # observe-vsextension
 
+Repository of the VSCode Extension
+
+
 noteable files: 
 
 ```src/OverviewCodeLensProvider.ts``` - code responsible for creating the response time codelens 
