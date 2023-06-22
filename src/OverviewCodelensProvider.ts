@@ -54,7 +54,7 @@ export class OverviewCodelensProvider implements vscode.CodeLensProvider {
             const body =
             {
                 "filePath": fileName,
-                "prevDays": 10
+                "prevDays": 30
             };
 
             const responseTimes: { [key: string]: number } = (await axios.post('http://127.0.0.1:8000/get_file_overview',

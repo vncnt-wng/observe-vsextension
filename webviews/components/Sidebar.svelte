@@ -467,11 +467,15 @@
 			rootPath: getFuncId(),
 		};
 		const responseData = (
-			await axios.post("http://127.0.0.1:8000/get_trace_trees", body, {
-				headers: {
-					"Content-Type": "application/json",
-				},
-			})
+			await axios.post(
+				"http://127.0.0.1:8000/get_descendant_trace_breakdown",
+				body,
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+				}
+			)
 		).data;
 		descendantsTimesByPathByExecutionPath = responseData.timesByPathByTree;
 	};
@@ -483,7 +487,7 @@
 		console.log(getFuncId());
 		const responseData = (
 			await axios.post(
-				"http://127.0.0.1:8000/get_all_execution_paths",
+				"http://127.0.0.1:8000/get_whole_distributed_trace_breakdown",
 				body,
 				{
 					headers: {
@@ -522,7 +526,7 @@
 		const body = {
 			qualName: qualName,
 			filePath: filePath,
-			prevDays: 10,
+			prevDays: 30,
 		};
 
 		const responseData: [] = (
@@ -735,13 +739,14 @@
 					{((calls / totalFilteredCalls) * 100).toFixed(1)}% of
 					displayed calls :
 				</p>
+				<p>{executionPath}</p>
 				<FlameNode
 					{...flameGraphTreesByExecutionPath.get(executionPath)}
 					switchFocusFunction={switchPanelFocus}
 					goToFunction={goToSymbol}
 				/>
 			{/each}
-<!-- 
+			<!-- 
 			{#each [...flameGraphTreesByExecutionPath] as [executionPath, flameGraphTree]}
 				<p>
 					{callsByExecutionPath.get(executionPath) ??
